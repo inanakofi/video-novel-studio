@@ -1,0 +1,14 @@
+{
+  "episode_id": "episode_003",
+  "title": "Episode title",
+  "scenes": [
+    {
+      "scene_id": 1,
+      "duration_seconds": 6,
+      "visual_asset": "assets/scene_001.png",
+      "narration": "Write the narration for this scene.",
+      "camera_motion": "static",
+      "subtitle_style": "cinematic"
+    }
+  ]
+}

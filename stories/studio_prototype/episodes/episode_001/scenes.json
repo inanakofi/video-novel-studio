@@ -1,0 +1,51 @@
+{
+  "episode_id": "episode_001",
+  "title": "The Letter at the Gate",
+  "scenes": [
+    {
+      "scene_id": 1,
+      "duration_seconds": 6.4,
+      "visual_asset": "assets/Scene 01 – Accra.png",
+      "narration": "On the night Ama returned to Accra, every window in her family mansion was dark.",
+      "camera_motion": "slow_zoom_in",
+      "subtitle_style": "cinematic",
+      "narration_audio": "assets/Ama scène 01.wav",
+      "transition": "crossfade",
+      "transition_seconds": 0.5
+    },
+    {
+      "scene_id": 2,
+      "duration_seconds": 4.433333333333334,
+      "visual_asset": "assets/Scene 02 – Accra.png",
+      "narration": "Inside the courtyard, Ama broke the seal.",
+      "camera_motion": "pan_right",
+      "subtitle_style": "cinematic",
+      "narration_audio": "assets/Ama scène 02.wav",
+      "transition": "crossfade",
+      "transition_seconds": 0.5
+    },
+    {
+      "scene_id": 3,
+      "duration_seconds": 4.433333333333334,
+      "visual_asset": "assets/Scene 03 – Accra.png",
+      "narration": "The courier stepped into the lamplight and raised his hand.",
+      "camera_motion": "slow_zoom_out",
+      "subtitle_style": "cinematic",
+      "narration_audio": "assets/Ama scène 03.wav",
+      "transition": "crossfade",
+      "transition_seconds": 0.5
+    }
+  ],
+  "settings": {
+    "title_card": "The Letter at the Gate",
+    "end_card": "Who is the boy with the silver ring?",
+    "target_duration": 75.0
+  },
+  "metadata": {
+    "number": 1,
+    "hook": "On the night Ama returned to Accra, every window in her family mansion was dark.",
+    "cliffhanger": "Who is the boy with the silver ring?",
+    "previous_episode": null,
+    "sample_audio": "Windows System.Speech installed voice; synthetic, offline, not a human recording."
+  }
+}

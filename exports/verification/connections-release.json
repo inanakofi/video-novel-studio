@@ -1,0 +1,49 @@
+{
+  "version": "1.2.0",
+  "export": {
+    "verified": true,
+    "width": 1080,
+    "height": 1920,
+    "fps": 30,
+    "video_codec": "h264",
+    "audio_codec": "aac",
+    "video_duration_seconds": 75.0,
+    "audio_end_seconds": 75.0,
+    "subtitle_end_seconds": 69.41,
+    "full_decode": "passed",
+    "output": "J:\\storyline\\video-novel-studio\\exports\\connections_and_video_demo_episode_001.mp4",
+    "episode_id": "episode_001",
+    "completed_utc": "2026-10-11T16:09:41.615493+00:00",
+    "source": "J:\\storyline\\video-novel-studio\\stories\\connections_and_video_demo\\episodes\\episode_001\\scenes.json",
+    "source_sha256": "a4f2980147a41a8fff4e506caa4edebadba9529c58d4e3963465c1f57063c1a5",
+    "target_duration_seconds": 75.0,
+    "within_default_60_90_seconds": true,
+    "caption_count": 18,
+    "scene_cache": {
+      "enabled": true,
+      "hits": 0,
+      "misses": 5
+    },
+    "output_sha256": "d83d52f7f077f88763eb5fa68b749b4b47f03866c0a5203cb5198bf719fa122a"
+  },
+  "player_frames_seconds": [
+    60.233333,
+    60.266667,
+    60.3,
+    60.333333,
+    60.366667,
+    60.4,
+    60.433333,
+    60.466667,
+    73.966667,
+    74.0,
+    74.033333,
+    74.066667
+  ],
+  "player_error": "",
+  "offline_mode": "disabled",
+  "network_calls": "Python socket.create_connection blocked during desktop render",
+  "cloud_generation": "Not tested: no provider credentials supplied",
+  "local_ai_generation": "Not tested: no Ollama/ComfyUI model service installed",
+  "sample_clip": "Locally animated original CC0 artwork; not AI-generated"
+}

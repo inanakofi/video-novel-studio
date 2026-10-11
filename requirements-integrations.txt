@@ -1,0 +1,2 @@
+# Optional MCP client/server only. AI HTTP connectors use Python's standard library.
+mcp==2.3.0

@@ -1,0 +1,15 @@
+{
+  "python": "3.14.2",
+  "platform": "Windows-10-10.0.19045-SP0",
+  "pillow": "12.1.0",
+  "pyside6": "6.10.1",
+  "ffmpeg": "ffmpeg version 9.0-full_build-www.gyan.dev Copyright (c) 2000-2026 the FFmpeg developers",
+  "ffprobe": "ffprobe version 9.0-full_build-www.gyan.dev Copyright (c) 2007-2026 the FFmpeg developers",
+  "required_media_features": "available",
+  "local_voices": [
+    "Microsoft David Desktop",
+    "Microsoft Hazel Desktop",
+    "Microsoft Zira Desktop"
+  ],
+  "recorded_narration_fallback": "supported"
+}

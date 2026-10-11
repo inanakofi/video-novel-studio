@@ -1,0 +1,33 @@
+{
+  "episode_id": "episode_001",
+  "title": "The Wedding Night (example)",
+  "duration_seconds": 11.0,
+  "scenes": [
+    {
+      "scene_id": 1,
+      "start_seconds": 0.0,
+      "end_seconds": 6.0,
+      "duration_seconds": 6.0,
+      "visual_asset": "J:\\storyline\\video-novel-studio\\stories\\ama_and_the_secret_heir\\episodes\\episode_001\\assets\\ama_mansion_night.png",
+      "camera_motion": "slow_zoom_in",
+      "narration": "The night Ama married the poorest man in Accra...",
+      "narration_audio": "J:\\storyline\\video-novel-studio\\stories\\ama_and_the_secret_heir\\episodes\\episode_001\\narration.wav",
+      "audio_offset_seconds": 0.0,
+      "subtitle": "The night Ama married the poorest man in Accra...",
+      "subtitle_style": "cinematic"
+    },
+    {
+      "scene_id": 2,
+      "start_seconds": 6.0,
+      "end_seconds": 11.0,
+      "duration_seconds": 5.0,
+      "visual_asset": "J:\\storyline\\video-novel-studio\\stories\\ama_and_the_secret_heir\\episodes\\episode_001\\assets\\mansion_gates.png",
+      "camera_motion": "pan_right",
+      "narration": "At the mansion gates, a stranger waited with a sealed letter.",
+      "narration_audio": "J:\\storyline\\video-novel-studio\\stories\\ama_and_the_secret_heir\\episodes\\episode_001\\narration.wav",
+      "audio_offset_seconds": 6.0,
+      "subtitle": "At the mansion gates, a stranger waited with a sealed letter.",
+      "subtitle_style": "cinematic"
+    }
+  ]
+}

@@ -1,0 +1,39 @@
+{
+  "real_caption_edge_drag": true,
+  "scene_trim_ripple": true,
+  "waveform_from_real_pcm": true,
+  "narration_playback": "passed (muted automation)",
+  "series_defaults_inherited": true,
+  "scene_continuity_saved": true,
+  "publishing_check": {
+    "ready": true,
+    "duration_seconds": 3.5,
+    "issues": [
+      {
+        "level": "warning",
+        "code": "duration",
+        "message": "3.50s is outside your 60\u201390s publishing range.",
+        "seconds": null
+      },
+      {
+        "level": "warning",
+        "code": "reading_speed",
+        "message": "Caption 1 exceeds 22 characters per second.",
+        "seconds": 0.4
+      },
+      {
+        "level": "warning",
+        "code": "reading_speed",
+        "message": "Caption 2 exceeds 22 characters per second.",
+        "seconds": 1.5
+      },
+      {
+        "level": "warning",
+        "code": "reading_speed",
+        "message": "Caption 3 exceeds 22 characters per second.",
+        "seconds": 2.3
+      }
+    ],
+    "guide": "Advisory mobile composition/readability checks; no platform certification or speech alignment."
+  }
+}

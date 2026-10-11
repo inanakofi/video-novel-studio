@@ -1,0 +1,10 @@
+__pycache__/
+*.py[cod]
+.venv/
+.studio_state.json
+*.egg-info/
+.vns-render-*/
+*.mp4.lock
+.vns-cache/
+.studio_connections.json
+.generation_jobs/

@@ -1,0 +1,20 @@
+{
+  "episode_id": "episode_002",
+  "title": "Episode 002 (template)",
+  "duration_seconds": 6.0,
+  "scenes": [
+    {
+      "scene_id": 1,
+      "start_seconds": 0.0,
+      "end_seconds": 6.0,
+      "duration_seconds": 6.0,
+      "visual_asset": "J:\\storyline\\video-novel-studio\\stories\\ama_and_the_secret_heir\\episodes\\episode_002\\assets\\scene_001.png",
+      "camera_motion": "static",
+      "narration": "Replace this with the episode's opening narration.",
+      "narration_audio": "J:\\storyline\\video-novel-studio\\stories\\ama_and_the_secret_heir\\episodes\\episode_002\\narration.wav",
+      "audio_offset_seconds": 0.0,
+      "subtitle": "Replace this with the episode's opening narration.",
+      "subtitle_style": "cinematic"
+    }
+  ]
+}

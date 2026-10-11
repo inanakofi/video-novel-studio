@@ -1,0 +1,134 @@
+{
+  "render_seconds": [
+    30.40304130000004
+  ],
+  "exports": [
+    {
+      "verified": true,
+      "width": 1080,
+      "height": 1920,
+      "fps": 30,
+      "video_codec": "h264",
+      "audio_codec": "aac",
+      "video_duration_seconds": 75.0,
+      "audio_end_seconds": 75.0,
+      "subtitle_end_seconds": 69.41,
+      "full_decode": "passed",
+      "output": "J:\\storyline\\video-novel-studio\\exports\\the_letter_at_the_gate_episode_001.mp4",
+      "episode_id": "episode_001",
+      "completed_utc": "2026-10-11T09:51:34.027543+00:00",
+      "source": "J:\\storyline\\video-novel-studio\\stories\\the_letter_at_the_gate\\episodes\\episode_001\\scenes.json",
+      "source_sha256": "af0cab9e24365e82337e0c93ad7040f0b028f723185c4df0b91f84e64932c1ca",
+      "target_duration_seconds": 75.0,
+      "within_default_60_90_seconds": true,
+      "caption_count": 18,
+      "scene_cache": {
+        "enabled": true,
+        "hits": 5,
+        "misses": 0
+      },
+      "output_sha256": "5007f9948aaf78ff8db0178bc86b949bb52018cbddbcea9ee59686c83b50d81c"
+    }
+  ],
+  "waveform_seconds": 75.0,
+  "actual_player_frame_seconds": 10.2,
+  "player_error": null,
+  "publishing": {
+    "ready": true,
+    "duration_seconds": 75.0,
+    "issues": [
+      {
+        "level": "warning",
+        "code": "caption_width",
+        "message": "Caption 1 may exceed the usable width at this font size; inspect its preview.",
+        "seconds": 2.0
+      },
+      {
+        "level": "warning",
+        "code": "caption_width",
+        "message": "Caption 3 may exceed the usable width at this font size; inspect its preview.",
+        "seconds": 8.929
+      },
+      {
+        "level": "warning",
+        "code": "caption_width",
+        "message": "Caption 5 may exceed the usable width at this font size; inspect its preview.",
+        "seconds": 16.159
+      },
+      {
+        "level": "warning",
+        "code": "caption_width",
+        "message": "Caption 7 may exceed the usable width at this font size; inspect its preview.",
+        "seconds": 24.067
+      },
+      {
+        "level": "warning",
+        "code": "caption_width",
+        "message": "Caption 8 may exceed the usable width at this font size; inspect its preview.",
+        "seconds": 28.047
+      },
+      {
+        "level": "warning",
+        "code": "caption_width",
+        "message": "Caption 9 may exceed the usable width at this font size; inspect its preview.",
+        "seconds": 32.028
+      },
+      {
+        "level": "warning",
+        "code": "caption_width",
+        "message": "Caption 10 may exceed the usable width at this font size; inspect its preview.",
+        "seconds": 35.549
+      },
+      {
+        "level": "warning",
+        "code": "caption_width",
+        "message": "Caption 11 may exceed the usable width at this font size; inspect its preview.",
+        "seconds": 38.994
+      },
+      {
+        "level": "warning",
+        "code": "caption_width",
+        "message": "Caption 13 may exceed the usable width at this font size; inspect its preview.",
+        "seconds": 47.933
+      },
+      {
+        "level": "warning",
+        "code": "caption_width",
+        "message": "Caption 14 may exceed the usable width at this font size; inspect its preview.",
+        "seconds": 52.362
+      },
+      {
+        "level": "warning",
+        "code": "caption_width",
+        "message": "Caption 16 may exceed the usable width at this font size; inspect its preview.",
+        "seconds": 59.716
+      },
+      {
+        "level": "warning",
+        "code": "caption_width",
+        "message": "Caption 17 may exceed the usable width at this font size; inspect its preview.",
+        "seconds": 64.229
+      },
+      {
+        "level": "warning",
+        "code": "pause",
+        "message": "Low narration level for 4.61s (19.58–24.19s). Review this pause.",
+        "seconds": 19.580000000000002
+      },
+      {
+        "level": "warning",
+        "code": "pause",
+        "message": "Low narration level for 4.58s (43.48–48.06s). Review this pause.",
+        "seconds": 43.480000000000004
+      },
+      {
+        "level": "warning",
+        "code": "pause",
+        "message": "Low narration level for 4.51s (68.49–73.00s). Review this pause.",
+        "seconds": 68.49
+      }
+    ],
+    "guide": "Advisory mobile composition/readability checks; no platform certification or speech alignment."
+  },
+  "note": "Real 1080p desktop renders, real PCM waveform, actual player decoding; playback muted in automation."
+}

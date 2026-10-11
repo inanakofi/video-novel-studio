@@ -1,0 +1,73 @@
+{
+  "episode_id": "episode_001",
+  "title": "The Wedding Night (example)",
+  "scenes": [
+    {
+      "scene_id": 1,
+      "duration_seconds": 6.0,
+      "visual_asset": "assets/ama_mansion_night.png",
+      "narration": "The night Ama married the poorest man in Accra...",
+      "camera_motion": "slow_zoom_in",
+      "subtitle_style": "cinematic",
+      "transition": "cut",
+      "transition_seconds": 0.5,
+      "characters": [],
+      "media_type": "image",
+      "video_start_seconds": 0.0,
+      "video_audio_volume": 0.0
+    },
+    {
+      "scene_id": 2,
+      "duration_seconds": 5.0,
+      "visual_asset": "assets/mansion_gates.png",
+      "narration": "At the mansion gates, a stranger waited with a sealed letter.",
+      "camera_motion": "pan_right",
+      "subtitle_style": "cinematic",
+      "transition": "cut",
+      "transition_seconds": 0.5,
+      "characters": [],
+      "media_type": "image",
+      "video_start_seconds": 0.0,
+      "video_audio_volume": 0.0
+    }
+  ],
+  "settings": {
+    "target_duration": 75.0,
+    "title_duration": 2.0,
+    "end_duration": 2.0,
+    "narration_volume": 1.0,
+    "music_volume": 0.16,
+    "title_card": "",
+    "end_card": "",
+    "font_size": 58,
+    "margin_bottom": 360,
+    "margin_left": 90,
+    "margin_right": 180,
+    "outline": 3,
+    "shadow": 1,
+    "wrap_chars": 30,
+    "caption_words": 9,
+    "caption_color": "#FFFFFF",
+    "card_background": "#111B2D",
+    "card_accent": "#61D7BB",
+    "card_text": "#F5F3EE",
+    "publish_min_duration": 60.0,
+    "publish_max_duration": 90.0,
+    "pause_warning_seconds": 1.5,
+    "width": 1080,
+    "height": 1920,
+    "fps": 30,
+    "narration_asset": "narration.wav",
+    "music_asset": "",
+    "duck_music": true,
+    "font": "Arial",
+    "subtitle_mode": "auto",
+    "sound_effects": []
+  },
+  "metadata": {
+    "hook": "",
+    "cliffhanger": "",
+    "voice": "Microsoft David Desktop",
+    "voice_rate": -1
+  }
+}

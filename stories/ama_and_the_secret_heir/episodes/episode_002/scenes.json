@@ -1,0 +1,14 @@
+{
+  "episode_id": "episode_002",
+  "title": "Episode 002 (template)",
+  "scenes": [
+    {
+      "scene_id": 1,
+      "duration_seconds": 6,
+      "visual_asset": "assets/scene_001.png",
+      "narration": "Replace this with the episode's opening narration.",
+      "camera_motion": "static",
+      "subtitle_style": "cinematic"
+    }
+  ]
+}

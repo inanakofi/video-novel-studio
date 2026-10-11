@@ -1,0 +1,34 @@
+{
+  "player": "PySide6 QMediaPlayer with QVideoSink",
+  "playback_error": null,
+  "decoded_frames_observed": 58,
+  "checkpoints": [
+    {
+      "requested_seconds": 10,
+      "decoded_frame_seconds": 10.033333,
+      "image": "playback-10s.png"
+    },
+    {
+      "requested_seconds": 34,
+      "decoded_frame_seconds": 34.4,
+      "image": "playback-34s.png"
+    },
+    {
+      "requested_seconds": 60,
+      "decoded_frame_seconds": 60.633333,
+      "image": "playback-60s.png"
+    },
+    {
+      "requested_seconds": 74,
+      "decoded_frame_seconds": 74.333333,
+      "image": "playback-74s.png"
+    }
+  ],
+  "duration_seconds": 75.0,
+  "decoded_audio_peak": 0.57470703125,
+  "decoded_audio_rms": 0.0653441269407031,
+  "subtitle_count": 18,
+  "subtitle_end_seconds": 69.41,
+  "output_sha256": "5007f9948aaf78ff8db0178bc86b949bb52018cbddbcea9ee59686c83b50d81c",
+  "note": "Playback muted during automated checks; PCM measured from the actual AAC stream."
+}

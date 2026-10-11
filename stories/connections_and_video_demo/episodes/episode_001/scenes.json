@@ -1,0 +1,101 @@
+{
+  "episode_id": "episode_001",
+  "title": "The Letter at the Gate — mixed media",
+  "scenes": [
+    {
+      "scene_id": 1,
+      "duration_seconds": 22.066666666666666,
+      "visual_asset": "assets/Scene 01 – Accra.png",
+      "narration": "On the night Ama returned to Accra, every window in her family mansion was dark. At the gate, a young courier held a letter addressed in her mother's handwriting. Her mother had been gone for twelve years. Yet the ink on the envelope was still fresh.",
+      "camera_motion": "slow_zoom_in",
+      "subtitle_style": "cinematic",
+      "narration_audio": "assets/Ama scène 01.wav",
+      "transition": "crossfade",
+      "transition_seconds": 0.5,
+      "characters": [],
+      "media_type": "image",
+      "video_start_seconds": 0.0,
+      "video_audio_volume": 0.0
+    },
+    {
+      "scene_id": 2,
+      "duration_seconds": 23.866666666666667,
+      "visual_asset": "assets/Courtyard motion — été.mp4",
+      "narration": "Inside the courtyard, Ama broke the seal. The letter contained a photograph of a boy wearing her father's signet ring. On the back were five words: Keep him away from home. Before she could turn the photograph over again, footsteps sounded behind the locked garden door.",
+      "camera_motion": "static",
+      "subtitle_style": "cinematic",
+      "narration_audio": "assets/Ama scène 02.wav",
+      "transition": "crossfade",
+      "transition_seconds": 0.5,
+      "characters": [],
+      "media_type": "video",
+      "video_start_seconds": 0.5,
+      "video_audio_volume": 0.0
+    },
+    {
+      "scene_id": 3,
+      "duration_seconds": 25.066666666666666,
+      "visual_asset": "assets/Scene 03 – Accra.png",
+      "narration": "The courier stepped into the lamplight and raised his hand. The same silver ring caught the light. Ama asked him who he was. He looked past her at the mansion, where one upstairs window had suddenly brightened. Ask your father, he said. He knows why I came back.",
+      "camera_motion": "parallax",
+      "subtitle_style": "cinematic",
+      "narration_audio": "assets/Ama scène 03.wav",
+      "transition": "crossfade",
+      "transition_seconds": 0.5,
+      "foreground_asset": "assets/Gate foreground.png",
+      "characters": [],
+      "media_type": "image",
+      "video_start_seconds": 0.0,
+      "video_audio_volume": 0.0
+    }
+  ],
+  "settings": {
+    "title_card": "The Letter at the Gate",
+    "end_card": "Who is the boy with the silver ring?",
+    "target_duration": 75.0,
+    "title_duration": 2.0,
+    "end_duration": 2.0,
+    "narration_volume": 1.0,
+    "music_volume": 0.22,
+    "font_size": 58,
+    "margin_bottom": 360,
+    "margin_left": 90,
+    "margin_right": 180,
+    "outline": 3,
+    "shadow": 1,
+    "wrap_chars": 30,
+    "caption_words": 9,
+    "width": 1080,
+    "height": 1920,
+    "fps": 30,
+    "narration_asset": "narration.wav",
+    "music_asset": "assets/Studio ambience.wav",
+    "duck_music": true,
+    "font": "Arial",
+    "subtitle_mode": "auto",
+    "sound_effects": [
+      {
+        "asset": "assets/Paper rustle.wav",
+        "start_seconds": 24.066666666666666,
+        "volume": 0.3
+      }
+    ],
+    "caption_color": "#FFFFFF",
+    "card_background": "#111B2D",
+    "card_accent": "#61D7BB",
+    "card_text": "#F5F3EE",
+    "publish_min_duration": 60.0,
+    "publish_max_duration": 90.0,
+    "pause_warning_seconds": 1.5
+  },
+  "metadata": {
+    "number": 1,
+    "hook": "On the night Ama returned to Accra, every window in her family mansion was dark.",
+    "cliffhanger": "Who is the boy with the silver ring?",
+    "previous_episode": null,
+    "sample_audio": "Windows System.Speech installed voice; synthetic, offline, not a human recording.",
+    "voice": "Microsoft David Desktop",
+    "voice_rate": -1,
+    "sample_visuals": "Original CC0 illustrations; middle clip animated locally with FFmpeg. No AI image/video generation."
+  }
+}

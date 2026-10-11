@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Video Novel Studio episode scenes",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["episode_id", "title", "scenes"],
+  "properties": {
+    "metadata": {"type": "object", "description": "Episode number, previous episode, hook, cliffhanger, and editorial notes."},
+    "settings": {
+      "type": "object",
+      "description": "Optional rendering, audio and caption settings. See src/settings.py and README.md for supported fields and ranges."
+    },
+    "episode_id": {"type": "string", "pattern": "\\S"},
+    "title": {"type": "string", "pattern": "\\S"},
+    "scenes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "scene_id", "duration_seconds", "visual_asset", "narration",
+          "camera_motion", "subtitle_style"
+        ],
+        "properties": {
+          "scene_id": {"type": "integer", "minimum": 1},
+          "duration_seconds": {"type": "number", "exclusiveMinimum": 0},
+          "visual_asset": {
+            "type": "string",
+            "pattern": "\\S",
+            "description": "Asset path relative to the directory containing scenes.json."
+          },
+          "narration": {"type": "string"},
+          "camera_motion": {
+            "type": "string",
+            "enum": ["static", "slow_zoom_in", "slow_zoom_out", "pan_left", "pan_right", "parallax"]
+          },
+          "subtitle_style": {"type": "string", "enum": ["cinematic", "standard"]},
+          "narration_audio": {
+            "type": "string",
+            "pattern": "\\S",
+            "description": "Optional scene-specific audio clip, relative to scenes.json."
+          },
+          "subtitle": {
+            "type": "string",
+            "description": "Optional caption override. Defaults to narration; an empty string hides the caption."
+          },
+          "transition": {"type": "string", "enum": ["cut", "crossfade", "fade_black"]},
+          "transition_seconds": {"type": "number", "exclusiveMinimum": 0},
+          "foreground_asset": {"type": "string", "pattern": "\\S", "description": "Transparent foreground image required for layered parallax."},
+          "characters": {"type": "array", "items": {"type": "string", "pattern": "\\S"}, "uniqueItems": true},
+          "location": {"type": "string", "pattern": "\\S", "description": "Location ID from the series continuity tracker."}
+        }
+      }
+    }
+  }
+}
