@@ -3,7 +3,6 @@ import argparse
 import json
 import math
 
-from .audio_manager import inspect_narration
 from .media import audio_duration
 from .scene_builder import load_episode
 from .series_tools import reference_errors

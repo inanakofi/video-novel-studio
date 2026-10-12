@@ -1,7 +1,6 @@
 """Production editing panels mixed into the native StudioWindow."""
 from dataclasses import replace
 import json
-from pathlib import Path
 
 from PySide6.QtCore import Qt, QUrl
 from PySide6.QtGui import QPixmap
@@ -20,6 +19,7 @@ from .subtitle_generator import Cue
 from .timeline import prepare_waveform, edit_timeline
 from .timeline_widget import TimelineWidget
 from .publishing import publishing_check
+from .exports import export_source
 
 
 def action(text, callback):
@@ -221,22 +221,23 @@ class ProductionPanels:
         if not self.episode or not self.save_all(quiet=True):
             return
         self.narration_player.pause()
-        source = str(self.episode.directory / 'scenes.json')
+        source = (self.episode.directory / 'scenes.json').resolve()
         for path in sorted((self.library.root / 'exports').glob('*.verification.json'), key=lambda p: p.stat().st_mtime, reverse=True):
             try:
                 report = json.loads(path.read_text(encoding='utf-8'))
-                if report.get('source') == source and report.get('verified') and Path(report['output']).is_file():
-                    target = QUrl.fromLocalFile(str(Path(report['output']).resolve()))
+                output = path.with_name(path.name.removesuffix('.verification.json') + '.mp4')
+                if export_source(report, self.library.root).resolve() == source and report.get('verified') and output.is_file():
+                    target = QUrl.fromLocalFile(str(output.resolve()))
                     if self.player.source() == target:
                         if self.player.playbackState() == QMediaPlayer.PlaybackState.PlayingState:
                             self.player.pause()
                         else:
                             self.player.play()
                     else:
-                        self.play_export(Path(report['output']))
+                        self.play_export(output)
                     self._audition_scene = None
                     self.tabs.setCurrentIndex(4)
-                    changed = digest(Path(source)) != report.get('source_sha256')
+                    changed = digest(source) != report.get('source_sha256')
                     self.timeline_video_note.setText('Project changed · rerender to see edits' if changed else 'Playing the last verified export')
                     return
             except (OSError, ValueError, KeyError):

@@ -31,6 +31,9 @@
             "description": "Asset path relative to the directory containing scenes.json."
           },
           "narration": {"type": "string"},
+          "media_type": {"type": "string", "enum": ["image", "video"]},
+          "video_start_seconds": {"type": "number", "minimum": 0, "maximum": 86400},
+          "video_audio_volume": {"type": "number", "minimum": 0, "maximum": 1},
           "camera_motion": {
             "type": "string",
             "enum": ["static", "slow_zoom_in", "slow_zoom_out", "pan_left", "pan_right", "parallax"]

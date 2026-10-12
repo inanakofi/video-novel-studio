@@ -183,7 +183,9 @@ class StoryLibrary:
         metadata = dict(episode.metadata)
         metadata['hook'] = re.split(r'(?<=[.!?])\s+', pieces[0])[0]
         metadata['cliffhanger'] = re.split(r'(?<=[.!?])\s+', pieces[-1])[-1]
-        updated = replace(episode, scenes=tuple(scenes), metadata=metadata)
+        updated = replace(episode, scenes=tuple(scenes), metadata=metadata,
+                          settings={**episode.settings, 'subtitle_mode': 'auto',
+                                    'narration_asset': 'narration_required.wav'})
         save_episode(updated)
         atomic_text(episode.directory / 'script.md', script)
         self.write_outline(updated)

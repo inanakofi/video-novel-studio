@@ -57,6 +57,18 @@ def settings_for(episode) -> dict:
         raise ValueError('Font name must be nonempty and contain no commas or line breaks')
     if type(result['duck_music']) is not bool or not isinstance(result['sound_effects'], list):
         raise ValueError('Invalid music ducking or sound effect settings')
+    for index, effect in enumerate(result['sound_effects']):
+        label = f'sound_effects[{index}]'
+        if not isinstance(effect, dict) or not {'asset', 'start_seconds', 'volume'}.issubset(effect):
+            raise ValueError(f'{label} needs asset, start_seconds, and volume.')
+        if not isinstance(effect['asset'], str) or not effect['asset'].strip():
+            raise ValueError(f'{label}.asset must be a nonempty path.')
+        for key in ('start_seconds', 'volume'):
+            value = effect[key]
+            if type(value) not in (int, float) or not math.isfinite(value) or value < 0:
+                raise ValueError(f'{label}.{key} must be a finite nonnegative number.')
+        if effect['volume'] > 1:
+            raise ValueError(f'{label}.volume must be between 0 and 1.')
     if result['publish_min_duration'] > result['publish_max_duration'] or result['pause_warning_seconds'] <= 0:
         raise ValueError('Publishing duration range must be ordered and pause threshold positive.')
     import re

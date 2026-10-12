@@ -10,7 +10,7 @@ import uuid
 
 from .config import ConnectionStore, SecretStore, PRESETS, identifier
 from .transport import ConnectionError, Transport, check_cancel
-from ..media import atomic_json, audio_duration, probe, RenderCancelled
+from ..media import atomic_json, audio_duration, probe
 from ..story_manager import atomic_text
 
 

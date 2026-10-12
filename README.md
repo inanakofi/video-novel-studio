@@ -5,9 +5,10 @@ narration recordings into vertical H.264/AAC videos. It includes a real FFmpeg
 renderer, editable scene timeline, caption editor, story documents, local audio
 mixing, an export verifier, and an embedded player for the finished MP4.
 
-**Start here:** run `python -m src.app` from this directory, or run
-`Start-Studio.ps1`. Open **The Letter at the Gate** to explore the supplied
-three-scene sample. Its finished 75-second video is in `exports/`.
+**Start here:** run `Start-Studio.ps1` (uses the project's virtual environment),
+or run `.\.venv\Scripts\python.exe -m src.app` after setup. Open **The Letter at
+the Gate** to explore the supplied three-scene sample. Its finished 75-second
+video is in `exports/`.
 
 ## Optional connections and video scenes (1.2)
 
@@ -110,7 +111,8 @@ Requirements:
 - FFmpeg and FFprobe on PATH. The FFmpeg build must include `libx264`, `aac`,
   `libass`/`ass`, `zoompan`, `overlay`, `loudnorm`, `sidechaincompress`, and
   `alimiter`. Verified with FFmpeg/FFprobe 9.0 full build on Windows.
-- Pillow and PySide6. Verified versions: Pillow 12.1.0 and PySide6 6.10.1.
+- Pillow and PySide6. Verified versions: Pillow 12.3.0 and PySide6 6.10.1.
+  Pillow 12.3.0 or newer is required for its image-decoding security fixes.
 - For optional local speech: Windows with an installed System.Speech voice.
   Importing recorded audio is available regardless of speech support.
 
@@ -131,6 +133,10 @@ python -m venv .venv
 `Start-Studio.ps1` prefers that virtual environment when present. FFmpeg may
 also be installed manually. Set `VNS_FFMPEG` and `VNS_FFPROBE` to full executable
 paths when PATH cannot be changed.
+
+For an existing installation, update the project environment with
+`.\.venv\Scripts\python.exe -m pip install -r requirements.txt`. Activate it with
+`.\.venv\Scripts\Activate.ps1` before using the `python` commands below.
 
 After installation, application use, local speech, media importing, previewing,
 and rendering require **no network connection, accounts, cloud AI, paid API,
@@ -153,6 +159,9 @@ belong to the operating system; they are not bundled voice models.
    Use a paragraph per scene or `## Scene 1` headings. **Build scenes from script**
    creates editable scene records, an episode outline, an opening hook and a
    cliffhanger draft, plus Markdown breakdown and continuity files.
+   Rebuilding detaches previous recordings and returns captions to automatic
+   mode; import or create narration for the revised text. Original recordings
+   remain on disk.
 3. In **Scenes / preview**, add at least three scenes. Browse to your images,
    or use shared character/background assets. The still preview preserves aspect
    ratio. The renderer fills the vertical frame by cropping, without stretching.

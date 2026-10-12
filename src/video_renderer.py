@@ -3,7 +3,6 @@
 import argparse
 import json
 import hashlib
-import math
 import os
 from pathlib import Path
 import tempfile
@@ -305,10 +304,12 @@ def build_render_plan(episode: Episode, *, check_assets: bool = False) -> dict[s
     for timed in timeline:
         scene = timed.scene
         visual = episode.resolve_asset(scene.visual_asset)
-        audio = episode.resolve_asset(scene.narration_audio or settings['narration_asset'])
+        audio = (episode.resolve_asset(scene.narration_audio or settings['narration_asset'])
+                 if scene.narration.strip() or scene.narration_audio else None)
+        foreground = episode.resolve_asset(scene.foreground_asset) if scene.foreground_asset else None
         if check_assets:
-            for asset in (visual, audio):
-                if not asset.is_file():
+            for asset in (visual, audio, foreground):
+                if asset is not None and not asset.is_file():
                     raise FileNotFoundError(f"Scene {scene.scene_id}: missing asset {asset}")
         planned.append({
             "scene_id": scene.scene_id,
@@ -321,13 +322,13 @@ def build_render_plan(episode: Episode, *, check_assets: bool = False) -> dict[s
             "video_audio_volume": scene.video_audio_volume,
             "camera_motion": scene.camera_motion,
             "narration": scene.narration,
-            "narration_audio": str(audio),
-            "audio_offset_seconds": 0.0 if scene.narration_audio else timed.start_seconds,
+            "narration_audio": str(audio) if audio is not None else None,
+            "audio_offset_seconds": 0.0 if scene.narration_audio or audio is None else timed.start_seconds,
             "subtitle": scene.subtitle_text,
             "subtitle_style": scene.subtitle_style,
             "transition": scene.transition,
             "transition_seconds": scene.transition_seconds,
-            "foreground_asset": str(episode.resolve_asset(scene.foreground_asset)) if scene.foreground_asset else None,
+            "foreground_asset": str(foreground) if foreground else None,
         })
     return {
         "episode_id": episode.episode_id,

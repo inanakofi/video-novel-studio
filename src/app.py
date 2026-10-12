@@ -14,24 +14,25 @@ from PySide6.QtCore import Qt, QObject, QThread, Signal, QUrl, Slot
 from PySide6.QtGui import QFont, QPixmap, QDesktopServices
 from PySide6.QtMultimedia import QAudioOutput, QMediaPlayer, QVideoSink, QVideoFrame
 from PySide6.QtWidgets import (
-    QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QGridLayout,
+    QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QLabel, QPushButton, QComboBox, QListWidget, QListWidgetItem, QLineEdit,
     QPlainTextEdit, QDoubleSpinBox, QSpinBox, QCheckBox, QTabWidget, QSplitter,
-    QScrollArea, QFormLayout, QFileDialog, QMessageBox, QInputDialog,
+    QScrollArea, QFormLayout, QFileDialog, QInputDialog,
     QProgressBar, QTableWidget, QTableWidgetItem, QHeaderView, QSlider,
     QStackedWidget, QFontComboBox, QAbstractItemView, QSizePolicy,
 )
 
 from .audio_manager import installed_voices, synthesize_local, inspect_narration
 from .batch import render_batch
-from .media import MediaError, RenderCancelled, atomic_json, audio_duration
-from .scene_builder import Scene, load_episode, save_episode, CAMERA_MOTIONS
+from .media import MediaError, atomic_json, audio_duration
+from .scene_builder import Scene, load_episode, save_episode
 from .settings import settings_for, card_durations
 from .story_manager import StoryLibrary, BIBLES, atomic_text, fit_scene_to_audio, fit_episode_to_target
-from .subtitle_generator import Cue, make_cues, cues_to_srt, parse_srt, validate_cues
+from .subtitle_generator import make_cues, cues_to_srt, parse_srt, validate_cues
 from .video_renderer import render_episode, asset_errors
 from .studio_panels import ProductionPanels
 from .connection_panels import ConnectionPanels
+from .exports import export_source
 
 
 STYLE = '''
@@ -147,7 +148,10 @@ class StudioWindow(ProductionPanels, ConnectionPanels, QMainWindow):
         self.state = {}
         if self.state_path.is_file():
             try:
-                self.state = json.loads(self.state_path.read_text(encoding='utf-8'))
+                state = json.loads(self.state_path.read_text(encoding='utf-8'))
+                if isinstance(state, dict):
+                    self.state = {key: value for key, value in state.items()
+                                  if key in ('story', 'episode') and isinstance(value, str)}
             except (ValueError, OSError):
                 pass
         self.setWindowTitle('Video Novel Studio')
@@ -557,7 +561,7 @@ class StudioWindow(ProductionPanels, ConnectionPanels, QMainWindow):
         self.status.setText(str(message))
 
     def _error(self, error):
-        self.last_error = str(error)
+        self.last_error = str(error).strip() or (type(error).__name__ if isinstance(error, BaseException) else 'Operation failed.')
         self._set_status(self.last_error.splitlines()[0])
         self.log.appendPlainText(self.last_error)
 
@@ -678,7 +682,10 @@ class StudioWindow(ProductionPanels, ConnectionPanels, QMainWindow):
             if self.resolution_combo.findText(resolution) < 0:
                 self.resolution_combo.addItem(resolution)
             self.resolution_combo.setCurrentText(resolution)
-            self.fps_combo.setCurrentText(str(settings['fps']))
+            fps = str(settings['fps'])
+            if self.fps_combo.findText(fps) < 0:
+                self.fps_combo.addItem(fps)
+            self.fps_combo.setCurrentText(fps)
             self.episode_audio_path.setText(settings['narration_asset'])
             self.music_path.setText(settings['music_asset'])
             self.duck_music.setChecked(settings['duck_music'])
@@ -807,7 +814,7 @@ class StudioWindow(ProductionPanels, ConnectionPanels, QMainWindow):
                                      for row in range(self.effects_table.rowCount())]
         return settings
 
-    def _save(self):
+    def _save(self, *, regenerate_captions=False):
         if not self.episode:
             return True
         self._commit_scene()
@@ -816,7 +823,15 @@ class StudioWindow(ProductionPanels, ConnectionPanels, QMainWindow):
         metadata = {**self.episode.metadata, 'hook': self.hook_edit.text(), 'cliffhanger': self.cliffhanger_edit.text(),
                     'voice': self.voice_combo.currentText() if self.voices else '', 'voice_rate': self.voice_rate.value()}
         self.episode = replace(self.episode, title=self.title_edit.text().strip() or self.episode.title, settings=settings, metadata=metadata)
-        if self.captions_dirty:
+        if regenerate_captions:
+            # Explicit regeneration must recover even when the edited table has
+            # invalid timestamps. Validate replacement cues before discarding it.
+            cues = make_cues(self.episode, inspect_narration(self.episode))
+            self.episode = replace(self.episode, settings={**settings, 'subtitle_mode': 'auto'})
+            self.subtitle_mode.setCurrentText('auto')
+            self._populate_captions(cues)
+            atomic_text(self.episode.directory / 'subtitles.srt', cues_to_srt(cues))
+        elif self.captions_dirty:
             self._save_manual_captions()
         elif settings['subtitle_mode'] == 'auto':
             self._sync_auto_captions()
@@ -1089,16 +1104,10 @@ class StudioWindow(ProductionPanels, ConnectionPanels, QMainWindow):
             self._refresh_timeline()
 
     def generate_captions(self):
-        if not self.episode or not self.save_all(quiet=True):
+        if not self.episode:
             return
-        def generate():
-            cues = make_cues(self.episode, inspect_narration(self.episode))
-            self._populate_captions(cues)
-            self.subtitle_mode.setCurrentText('auto')
-            atomic_text(self.episode.directory / 'subtitles.srt', cues_to_srt(cues))
-            self.save_all()
-            self._set_status(f'Generated {len(cues)} cues using the actual narration duration. Review and adjust timing as needed.')
-        self._guard(generate)
+        if self._guard(lambda: self._save(regenerate_captions=True)):
+            self._set_status(f'Generated {self.caption_table.rowCount()} cues using the actual narration duration. Review and adjust timing as needed.')
 
     def _sync_auto_captions(self):
         """Keep the timeline and saved auto SRT consistent with actual rendering."""
@@ -1299,7 +1308,7 @@ class StudioWindow(ProductionPanels, ConnectionPanels, QMainWindow):
                 if not report.get('verified') or not output.is_file():
                     continue
                 status = 'Verified · full decode passed'
-                source = Path(report['source'])
+                source = export_source(report, self.library.root)
                 if source.is_file() and hashlib.sha256(source.read_bytes()).hexdigest() != report.get('source_sha256'):
                     status = 'Verified export · project changed since render'
                 row = self.export_table.rowCount()

@@ -1,7 +1,6 @@
 """Desktop controls for optional connections and explicit result review."""
 from dataclasses import replace
 import json
-import math
 from pathlib import Path
 import shutil
 import uuid
@@ -15,7 +14,7 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QFormLayout, Q
 from .connections.config import Connection, ConnectionStore, SecretStore, PRESETS
 from .connections.generation import GenerationService, prompt_for, episode_from_draft, parse_script, script_markdown, validate_artifact
 from .connections.tools import call_http, mcp_action
-from .media import atomic_json, audio_duration
+from .media import atomic_json
 from .scene_builder import save_episode
 from .story_manager import atomic_text
 
@@ -503,7 +502,7 @@ class ConnectionPanels:
                 changes = {'visual_asset': relative, 'media_type': kind, 'video_start_seconds': 0, 'video_audio_volume': 0}
                 if kind == 'video':
                     from .video_assets import video_info
-                    info = video_info(path)
+                    video_info(path)
                     changes.update(camera_motion='static', foreground_asset=None)
                 scene = replace(scene, **changes)
             scenes = list(self.episode.scenes)

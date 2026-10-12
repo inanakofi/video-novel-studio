@@ -8,3 +8,6 @@ __pycache__/
 .vns-cache/
 .studio_connections.json
 .generation_jobs/
+/build/
+/dist/
+.ruff_cache/

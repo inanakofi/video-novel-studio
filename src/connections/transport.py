@@ -4,7 +4,7 @@ import json
 import socket
 import time
 from urllib.error import HTTPError, URLError
-from urllib.parse import urlsplit, urljoin
+from urllib.parse import urlsplit
 from urllib.request import Request, build_opener, HTTPRedirectHandler, ProxyHandler
 
 from ..media import RenderCancelled

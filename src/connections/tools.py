@@ -3,7 +3,6 @@ import asyncio
 from contextlib import AsyncExitStack
 import json
 import os
-from urllib.parse import urlsplit
 
 from .generation import GenerationService
 from .transport import ConnectionError, validate_url, check_cancel
