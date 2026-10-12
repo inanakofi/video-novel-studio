@@ -1,0 +1,25 @@
+[
+  {
+    "provider": "openrouter",
+    "total_models": 659,
+    "task_counts": {
+      "story": 458,
+      "script": 458,
+      "image": 61,
+      "voice": 32,
+      "video": 30
+    },
+    "outputs": {
+      "decisions": 19,
+      "text": 458,
+      "speech": 32,
+      "transcription": 25,
+      "video": 30,
+      "image": 61,
+      "rerank": 9,
+      "embeddings": 37,
+      "audio": 4
+    },
+    "generation_requests": 0
+  }
+]

@@ -4,7 +4,8 @@
 offline video production, AI APIs/MCP, and automatic manuscript production.
 
 The latest review, fixes, test results and outstanding draft assets are recorded
-in [REVIEW_REPORT.md](REVIEW_REPORT.md).
+in [REVIEW_REPORT.md](REVIEW_REPORT.md). The subsequent model-catalog and runtime
+review is in [MODEL_CATALOG_REVIEW.md](MODEL_CATALOG_REVIEW.md).
 
 ## Manuscript → videos
 
@@ -40,6 +41,16 @@ generation is saved locally for review before you apply it. Windows credentials
 are encrypted outside project files. Offline editing and exports remain independent
 of these services; provider accounts and local models are not bundled.
 
+Each manuscript task now has its own searchable model selection. Reuse one
+platform connection/API key across text, illustration, speech and video models,
+or keep several connections with different keys on the same platform. Free and
+open-weights filters, cached discovery, saved task choices and connection
+duplication simplify setup. OpenRouter media generation and compatible
+image/speech servers are supported; see [setup details](CONNECTIONS.md#reuse-a-platform-across-tasks).
+Use **Show all models** to clear catalog filters and **Refresh model catalogs**
+to retrieve current lists. Each manuscript task displays its shown/total count;
+discovery now also covers ElevenLabs speech models and ComfyUI workflow choices.
+
 The scene editor now imports actual video clips with trim starts, muted-by-default
 original audio, aspect-preserving crop and the existing captions/transitions.
 **Connections and Video Demo** contains a verified 75-second mixed-media sample.
@@ -47,8 +58,9 @@ original audio, aspect-preserving crop and the existing captions/transitions.
 See [CONNECTIONS.md](CONNECTIONS.md) for provider setup, OpenRouter instructions,
 optional MCP installation, recovery and current limits. See
 [CONNECTIONS_VERIFICATION.md](CONNECTIONS_VERIFICATION.md) for tested versus
-untested capabilities. Cloud generation still requires live credentialed testing;
-the automated provider fixtures are not AI models.
+untested capabilities. [Live OpenRouter checks](exports/verification/openrouter-models-live.json)
+produced a script and narration; the test account blocked images with HTTP 402.
+Other adapters use protocol fixtures, which are not AI models.
 
 ## New editing and production controls
 
@@ -363,8 +375,9 @@ verification evidence is under `verification/`.
 
 - The original script breakdown/hook helpers remain deterministic. Optional
   generation adapters require a separately configured model service. No AI model
-  weights or voice-cloning implementation are bundled. Live cloud and local-model
-  inference have not been verified in this environment; see CONNECTIONS.md.
+  weights or voice-cloning implementation are bundled. Live OpenRouter text and
+  speech were exercised; other cloud and local-model inference remains unverified.
+  See CONNECTIONS.md for the tested scope and account limitations.
 - Local TTS is implemented and tested for Windows System.Speech. On other
   platforms, import narration. The Python/media services are portable, but
   desktop packaging and playback were verified on Windows only.

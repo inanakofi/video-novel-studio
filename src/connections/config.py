@@ -12,9 +12,9 @@ from ..media import atomic_json
 
 
 PRESETS = {
-    'openrouter': ('OpenRouter', 'https://openrouter.ai/api/v1', ('story', 'script'), {}),
+    'openrouter': ('OpenRouter', 'https://openrouter.ai/api/v1', ('story', 'script', 'image', 'voice', 'video'), {}),
     'ollama': ('Ollama', 'http://127.0.0.1:11434', ('story', 'script'), {}),
-    'openai_compatible': ('OpenAI-compatible text', 'https://api.openai.com/v1', ('story', 'script'), {}),
+    'openai_compatible': ('OpenAI-compatible / open model server', 'https://api.openai.com/v1', ('story', 'script', 'image', 'voice'), {}),
     'elevenlabs': ('ElevenLabs', 'https://api.elevenlabs.io/v1', ('voice',), {'voice_id': ''}),
     'comfyui': ('ComfyUI', 'http://127.0.0.1:8188', ('image', 'video'), {'workflow': {}}),
     'runway': ('Runway', 'https://api.dev.runwayml.com/v1', ('video',), {'duration': 5, 'ratio': '720:1280'}),

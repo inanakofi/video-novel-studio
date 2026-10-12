@@ -1,5 +1,5 @@
 """Resumable, bounded manuscript production. External calls are sequential."""
-from dataclasses import asdict
+from dataclasses import asdict, replace
 from datetime import datetime, timezone
 import hashlib
 import importlib.util
@@ -16,6 +16,7 @@ from .manuscript import extract, chunks
 from .prompts import VERSION, SOURCE, PROMPTS, FORMATS, instructions
 from ..connections.config import identifier
 from ..connections.generation import GenerationService
+from ..connections.models import effective_model
 from ..connections.transport import check_cancel, validate_url
 from ..audio_manager import inspect_narration, installed_voices
 from ..media import atomic_json, audio_duration, ffmpeg, tool
@@ -125,6 +126,12 @@ class ProductionRunner:
             raise ValueError('Invalid production options.')
         if not isinstance(config.get('routes'), dict):
             raise ValueError('Production routes must be an object of task names to connection IDs.')
+        for key in ('models', 'speaker_models', 'voices'):
+            values = config.get(key, {})
+            if not isinstance(values, dict) or any(not isinstance(k, str) or not isinstance(v, str) for k, v in values.items()):
+                raise ValueError(f'{key} must be an object of task/speaker names to text values.')
+        if set(config.get('models', {})) - ROLE_KINDS.keys():
+            raise ValueError('Unknown task in model selections.')
         tool('ffmpeg')
         tool('ffprobe')
         required = {'analysis', 'writing', 'review', 'voice', 'image' if config['format'] == 'narrated' else 'video'}
@@ -136,14 +143,22 @@ class ProductionRunner:
             required.add('lipsync')
         snapshots = {}
         local_speech_needed = False
-        def validate_route(role, route):
+        def validate_route(role, route, model_role=None):
             nonlocal local_speech_needed
+            if not route:
+                raise ValueError(f'Choose a connection for {role}.')
             if route == 'local_speech' and role == 'voice':
                 if os.name != 'nt':
                     raise ValueError('Installed speech is Windows-only. Choose a voice connection.')
                 local_speech_needed = True
                 return
             mode, connection = self.service.connection(route)
+            snapshots[route] = asdict(connection)
+            connection = replace(connection, model=effective_model(config, model_role or role, connection))
+            voice = config.get('voices', {}).get(model_role or role, '')
+            if voice:
+                connection = replace(connection, options={**connection.options, 'voice_id': voice})
+            self.service.catalog.validate_selection(connection, ROLE_KINDS[role])
             if connection.provider != 'mcp_stdio':
                 validate_url(connection.base_url, mode)
             if not capability(connection, ROLE_KINDS[role]):
@@ -160,14 +175,15 @@ class ProductionRunner:
                 if connection.provider == 'mcp_stdio' and not connection.options.get('command'):
                     raise ValueError(f'{connection.name}: configure the MCP program command.')
             elif connection.provider in ('ollama', 'openrouter', 'openai_compatible', 'runway') and not connection.model:
-                raise ValueError(f'{connection.name}: enter a model ID in Connections / AI.')
+                raise ValueError(f'{connection.name}: choose a model for {role}, or set a default model in Connections / AI.')
             elif connection.provider == 'elevenlabs' and not connection.options.get('voice_id'):
                 raise ValueError(f'{connection.name}: set options.voice_id.')
             elif connection.provider == 'comfyui':
                 graph = connection.options.get('workflow')
                 if not isinstance(graph, dict) or not graph or not all(isinstance(v, dict) and 'class_type' in v and isinstance(v.get('inputs'), dict) for v in graph.values()) or '{{prompt}}' not in json.dumps(graph):
                     raise ValueError(f'{connection.name}: load a valid API workflow containing {{{{prompt}}}}.')
-            snapshots[route] = asdict(connection)
+                if '{{model}}' in json.dumps(graph) and not connection.model:
+                    raise ValueError(f'{connection.name}: choose a model for the workflow’s {{{{model}}}} input.')
         for role in required:
             validate_route(role, config['routes'].get(role))
         voices = config.get('speaker_routes', {})
@@ -176,7 +192,9 @@ class ProductionRunner:
         for speaker, route in voices.items():
             if not isinstance(speaker, str) or not re.fullmatch(r'NARRATOR|CHAR-[0-9]{3}', speaker):
                 raise ValueError('Voice overrides use NARRATOR or CHAR-001-style IDs.')
-            validate_route('voice', route)
+            validate_route('voice', route, 'voice_' + speaker)
+        if set(config.get('speaker_models', {})) - voices.keys():
+            raise ValueError('Each speaker model override needs a matching speaker connection override.')
         if local_speech_needed:
             voices = installed_voices()
             if not voices or (config.get('local_voice') and config['local_voice'] not in voices):

@@ -89,17 +89,27 @@ class Transport:
         try:
             return opener.open(Request(url, data=data, headers=headers, method=method), timeout=self.timeout)
         except HTTPError as error:
+            detail = ''
+            try:
+                payload = json.loads(error.read(4096))
+                problem = payload.get('error', {}) if isinstance(payload, dict) else {}
+                if isinstance(problem, dict) and isinstance(problem.get('message'), str):
+                    detail = ' ' + problem['message'][:500].replace('\n', ' ').replace('\r', ' ')
+                    if self.secret:
+                        detail = detail.replace(self.secret, '[redacted]')
+            except (ValueError, OSError):
+                pass
             error.close()
-            raise ConnectionError(f'{self.connection.name}: HTTP {error.code}. Check the endpoint, model, credentials and provider account. No automatic retry was made.') from None
+            raise ConnectionError(f'{self.connection.name}: HTTP {error.code}.{detail} Check the endpoint, model, credentials and provider account. No automatic retry was made.') from None
         except (URLError, OSError, TimeoutError):
             raise ConnectionError(f'{self.connection.name}: connection failed or timed out. Submission outcome may be unknown; check provider history before submitting again.') from None
 
-    def request(self, method, path, body=None, *, raw=False, capture_submission=False):
+    def request(self, method, path, body=None, *, raw=False, capture_submission=False, limit=None):
         if method not in ('GET', 'POST', 'PUT', 'PATCH', 'DELETE'):
             raise ConnectionError('Unsupported HTTP method')
         with self._open(method, self.url(path), body, True) as response:
             chunks, total = [], 0
-            limit = 64 * 1024**2 if raw else 16 * 1024**2
+            limit = limit if limit is not None else (64 * 1024**2 if raw else 16 * 1024**2)
             while True:
                 # A queued job's tiny response contains its only recovery ID. Once
                 # submitted, capture that response before honoring cancellation.

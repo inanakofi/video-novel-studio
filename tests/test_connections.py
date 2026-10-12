@@ -1,5 +1,6 @@
 """Provider protocol fixtures, not claims of live AI generation."""
 from dataclasses import replace
+import base64
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
 import os
@@ -31,6 +32,7 @@ class ProviderFixture:
         self.invalid_text = False
         self.cancel_on_submit = None
         self.invalid_media = False
+        self.models = None
         self.media = {}
         image = root / 'fixture.png'
         Image.new('RGB', (120, 200), '#156050').save(image)
@@ -60,8 +62,20 @@ class ProviderFixture:
                     return
                 content = None
                 result = {}
-                if self.path == '/models':
-                    result = {'data': [{'id': 'fixture/model'}]}
+                if self.path.split('?')[0] == '/models':
+                    result = {'data': owner.models if owner.models is not None else [{'id': 'fixture/model'}]}
+                elif self.path in ('/images', '/images/generations'):
+                    result = {'data': [{'b64_json': base64.b64encode(owner.media['.png']).decode(), 'media_type': 'image/png'}], 'usage': {'cost': 0}}
+                elif self.path == '/audio/speech':
+                    content = b'not audio' if owner.invalid_media else owner.media['.mp3']
+                elif self.path == '/videos':
+                    result = {'id': 'fixture-video'}
+                    if owner.cancel_on_submit:
+                        owner.cancel_on_submit.set()
+                elif self.path == '/videos/fixture-video':
+                    result = {'status': 'pending'} if owner.pending else {'status': 'completed', 'usage': {'cost': 0}}
+                elif self.path == '/videos/fixture-video/content':
+                    content = owner.media['.mp4']
                 elif self.path == '/api/tags':
                     result = {'models': [{'name': 'fixture-local'}]}
                 elif self.path == '/chat/completions':

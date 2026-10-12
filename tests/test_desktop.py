@@ -102,7 +102,14 @@ class DesktopWorkflowTests(unittest.TestCase):
             self.assertIsNone(window._thread, 'Render worker did not finish')
             self.assertIsNotNone(window.last_report, window.last_error)
             self.assertTrue(window.last_report['verified'])
-            QTest.qWait(900)
+            # Decoder startup is asynchronous and can exceed 900 ms under suite
+            # load. Wait for actual displayed frames, still bounded by a deadline.
+            playback_deadline = time.monotonic() + 8
+            while (not any(decoded_frames) or window.video_widget.last_image is None
+                   or window.player.position() <= 0) and time.monotonic() < playback_deadline:
+                if window.player.error() != QMediaPlayer.Error.NoError:
+                    break
+                QTest.qWait(25)
             self.assertEqual(window.player.error(), QMediaPlayer.Error.NoError, window.player.errorString())
             self.assertGreater(window.player.position(), 0)
             self.assertTrue(any(decoded_frames), 'The actual player did not decode any video frames')

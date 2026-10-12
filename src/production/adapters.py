@@ -1,6 +1,6 @@
 """Task routing to existing providers or an explicitly configured HTTP/MCP tool."""
 import base64
-from dataclasses import asdict
+from dataclasses import asdict, replace
 import json
 import mimetypes
 from pathlib import Path
@@ -12,6 +12,7 @@ from ..connections.config import Connection, PRESETS
 from ..connections.generation import validate_artifact
 from ..connections.tools import call_http, mcp_action
 from ..connections.transport import Transport, check_cancel
+from ..connections.models import effective_model
 from ..media import atomic_json
 from ..story_manager import atomic_text
 
@@ -105,6 +106,7 @@ class Router:
             mode, connection = self.service.connection(route)
             if asdict(connection) != self.state['connections'][route]:
                 raise ValueError(f'Connection {connection.name} changed. Restore its saved settings before resuming; see run.json.')
+            connection = replace(connection, model=effective_model(self.state['config'], role, connection))
             if not capability(connection, kind):
                 raise ValueError(f'{connection.name} cannot perform {kind}. Configure the matching production tool.')
             if connection.provider not in ('http', 'mcp_stdio', 'mcp_http'):
@@ -112,6 +114,7 @@ class Router:
                 resume = stage['job_id'] if job_path.exists() else None
                 # A crash before the service creates job.json has not submitted anything.
                 job = self.service.run(route, kind, prompt, cancel=self.cancel, resume=resume, job_id=stage['job_id'],
+                                       model=connection.model, voice=self.state['config'].get('voices', {}).get(role),
                                        target={'production_run': self.state['id'], 'stage': key},
                                        progress=(lambda fraction, message: self.progress(fraction, key + ': ' + message)) if self.progress else None)
                 source = self.service.jobs / job['id'] / job['artifacts'][0]

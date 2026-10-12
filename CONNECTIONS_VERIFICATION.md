@@ -1,5 +1,32 @@
 # Connections upgrade verification — 1.2.0
 
+## Model routing follow-up — 2026-10-12
+
+The complete suite passed **118 tests in 111.181 seconds** with desktop tests
+enabled. Two subsequently added regressions for corrupt optional catalogs and
+legacy job recovery passed in an **11-test focused routing run**. The full run
+is captured in [model-routing-tests.txt](verification/model-routing-tests.txt).
+Routing checks cover shared and separate API keys, per-task model overrides,
+output modality filtering, free/open-weights filtering, saved UI choices,
+connection duplication, media validation and single-submission video recovery.
+
+Live checks used the key in `temp_api.txt` and `THE_CEO’S_HIDDEN_LOVE.txt`:
+
+- `openrouter/free` returned a structurally valid two-scene script; reported cost was zero.
+- `fish-audio/s2.1-pro-free:free` returned a playable 6.060-second MP3 narration sample.
+- `inclusionai/ming-image-0.1-design` lists zero image pricing, but OpenRouter
+  rejected generation with HTTP 402: the free-tier account had never purchased credits.
+- No complete AI video was produced and no paid video model was called.
+
+See the [live report](exports/verification/openrouter-models-live.json),
+[script](exports/verification/ceo-openrouter-draft.json),
+[narration](exports/verification/ceo-openrouter-narration.mp3), and
+[task selection controls](exports/verification/task-model-selection.png).
+The test key is encrypted in the user credential vault and excluded from Git.
+Samples are technically validated; creative quality and spoken pronunciation
+have not been approved by a human. The remaining sections record the earlier
+2026-10-11 verification.
+
 Verified on 2026-10-11 in `J:\storyline\video-novel-studio`.
 
 ## Result

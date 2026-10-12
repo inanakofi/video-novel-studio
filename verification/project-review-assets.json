@@ -1,0 +1,35 @@
+[
+  {
+    "episode": "stories/ama_and_the_secret_heir/episodes/episode_001/scenes.json",
+    "errors": [
+      "Scene 1: missing image: J:\\storyline\\video-novel-studio\\stories\\ama_and_the_secret_heir\\episodes\\episode_001\\assets\\ama_mansion_night.png",
+      "Scene 2: missing image: J:\\storyline\\video-novel-studio\\stories\\ama_and_the_secret_heir\\episodes\\episode_001\\assets\\mansion_gates.png",
+      "Scene 1: episode recording ends at 0.25s; it must cover 6.00s. Import a complete recording or use separate scene clips."
+    ]
+  },
+  {
+    "episode": "stories/ama_and_the_secret_heir/episodes/episode_002/scenes.json",
+    "errors": [
+      "Scene 1: missing image: J:\\storyline\\video-novel-studio\\stories\\ama_and_the_secret_heir\\episodes\\episode_002\\assets\\scene_001.png",
+      "Missing media file: J:\\storyline\\video-novel-studio\\stories\\ama_and_the_secret_heir\\episodes\\episode_002\\narration.wav"
+    ]
+  },
+  {
+    "episode": "stories/connections_and_video_demo/episodes/episode_001/scenes.json",
+    "errors": []
+  },
+  {
+    "episode": "stories/fiifi/episodes/episode_001/scenes.json",
+    "errors": [
+      "Scene 1: missing image: J:\\storyline\\video-novel-studio\\stories\\fiifi\\episodes\\episode_001\\assets\\scene_001.png"
+    ]
+  },
+  {
+    "episode": "stories/studio_prototype/episodes/episode_001/scenes.json",
+    "errors": []
+  },
+  {
+    "episode": "stories/the_letter_at_the_gate/episodes/episode_001/scenes.json",
+    "errors": []
+  }
+]

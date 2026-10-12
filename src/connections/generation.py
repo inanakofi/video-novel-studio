@@ -1,5 +1,6 @@
 """Real provider adapters and durable, reviewable local generation jobs."""
 from dataclasses import asdict, replace
+import base64
 from datetime import datetime, timezone
 import json
 import math
@@ -10,6 +11,8 @@ import uuid
 
 from .config import ConnectionStore, SecretStore, PRESETS, identifier
 from .transport import ConnectionError, Transport, check_cancel
+from .models import ModelCatalog
+from .discovery import discover_models
 from ..media import atomic_json, audio_duration, probe
 from ..story_manager import atomic_text
 
@@ -110,6 +113,7 @@ class GenerationService:
         self.store = ConnectionStore(self.root)
         self.secrets = secrets or SecretStore()
         self.jobs = self.root / '.generation_jobs'
+        self.catalog = ModelCatalog(self.root)
 
     def connection(self, connection_id):
         mode, profiles = self.store.load()
@@ -126,18 +130,31 @@ class GenerationService:
 
     def discover(self, connection_id, cancel=None):
         transport = self.transport(connection_id, cancel)
-        provider = transport.connection.provider
-        paths = {'ollama': '/api/tags', 'openrouter': '/models', 'openai_compatible': '/models',
-                 'elevenlabs': '/voices', 'comfyui': '/system_stats', 'runway': '/organization'}
-        if provider not in paths:
-            raise ValueError('Use the Tools panel to test this connection')
-        result = transport.request('GET', paths[provider])
-        models = []
-        if provider == 'ollama':
-            models = [m['name'] for m in result.get('models', [])]
-        elif provider in ('openrouter', 'openai_compatible'):
-            models = [m['id'] for m in result.get('data', [])]
-        return {'status': 'Endpoint responded; generation not tested', 'models': models, 'response': result}
+        transport.timeout = 30
+        result = discover_models(transport)
+        self.catalog.save(transport.connection, result['catalog'])
+        return result
+
+    def refresh_catalogs(self, cancel=None, progress=None):
+        mode, profiles = self.store.load()
+        if mode == 'disabled':
+            raise ConnectionError('Enable connections before refreshing model catalogs.')
+        profiles = [c for c in profiles if c.enabled and PRESETS[c.provider][2]]
+        report, seen = [], set()
+        for i, connection in enumerate(profiles):
+            check_cancel(cancel)
+            key = self.catalog.key(connection)
+            if key in seen:
+                continue
+            if progress:
+                progress(i / len(profiles), 'Discovering models: ' + connection.name)
+            try:
+                result = self.discover(connection.id, cancel)
+                seen.add(key)
+                report.append(f'{connection.name}: {len(result["catalog"])} models. {result["status"]}.')
+            except (ConnectionError, ValueError, OSError) as error:
+                report.append(f'{connection.name}: refresh failed; cached models kept. {error}')
+        return '\n'.join(report) or 'No enabled generation connections. Add one in Connections / AI.'
 
     def list_jobs(self):
         if not self.jobs.exists():
@@ -165,18 +182,36 @@ class GenerationService:
             raise ValueError('Invalid saved generation job')
         return data
 
-    def run(self, connection_id, kind, prompt, *, cancel=None, progress=None, resume=None, target=None, job_id=None):
+    def run(self, connection_id, kind, prompt, *, cancel=None, progress=None, resume=None, target=None, job_id=None,
+            model=None, voice=None):
         transport = self.transport(connection_id, cancel)
-        connection = transport.connection
+        base_connection = transport.connection
+        saved = self.load_job(resume) if resume else None
+        if saved and saved.get('base_connection') and saved['base_connection'] != asdict(base_connection):
+            raise ValueError('Restore the original connection settings before resuming this job')
+        if saved and not saved.get('base_connection') and saved['connection'] != asdict(base_connection):
+            raise ValueError('Restore the original connection settings before resuming this job')
+        if saved and model is None:
+            model = saved['connection'].get('model', '')
+        if saved and voice is None:
+            voice = saved['connection'].get('options', {}).get('voice_id')
+        if model is not None and not isinstance(model, str):
+            raise ValueError('Model ID must be text')
+        if voice is not None and not isinstance(voice, str):
+            raise ValueError('Voice ID must be text')
+        connection = replace(base_connection, model=model or base_connection.model,
+                             options={**base_connection.options, **({'voice_id': voice} if voice else {})})
+        transport.connection = connection
         if kind not in PRESETS[connection.provider][2]:
             raise ValueError(f'{connection.name} does not support {kind} in this adapter')
         if not prompt.strip():
             raise ValueError('Enter a prompt before generating')
         if connection.provider in ('ollama', 'openrouter', 'openai_compatible', 'runway') and not connection.model:
             raise ValueError('Choose or enter a model ID')
-        job = self.load_job(resume) if resume else {
+        self.catalog.validate_selection(connection, kind)
+        job = saved if resume else {
             'id': identifier(job_id) if job_id else uuid.uuid4().hex, 'created_utc': datetime.now(timezone.utc).isoformat(),
-            'connection': asdict(connection), 'kind': kind, 'prompt': prompt,
+            'connection': asdict(connection), 'base_connection': asdict(base_connection), 'kind': kind, 'prompt': prompt,
             'status': 'created', 'remote_id': None, 'artifacts': [], 'target': target or {},
         }
         if resume and (job['connection'] != asdict(connection) or job['kind'] != kind):
@@ -237,6 +272,7 @@ class GenerationService:
                     text = choices[0].get('message', {}).get('content')
                     job['usage'] = result.get('usage', {})
                     job['provider_response_id'] = result.get('id')
+                    job['resolved_model'] = result.get('model', connection.model)
                 if not isinstance(text, str) or not text.strip():
                     raise ConnectionError('Provider returned no text')
                 atomic_text(directory / 'draft.txt', text)
@@ -248,6 +284,39 @@ class GenerationService:
                     except ValueError as error:
                         job['script_valid'] = False
                         job['review_note'] = str(error)
+            elif kind == 'image' and provider in ('openrouter', 'openai_compatible'):
+                extra = options.get('image_generation', {})
+                if not isinstance(extra, dict) or set(extra) - {'n', 'size', 'resolution', 'aspect_ratio', 'quality', 'output_format', 'background', 'seed'}:
+                    raise ValueError('Unsupported image generation options')
+                result = transport.request('POST', '/images' if provider == 'openrouter' else '/images/generations',
+                                           {**extra, 'model': connection.model, 'prompt': prompt}, limit=64 * 1024**2)
+                items = result.get('data', [])
+                if not items:
+                    raise ConnectionError('Provider returned no images')
+                for i, item in enumerate(items, 1):
+                    suffix = {'image/jpeg': '.jpg', 'image/webp': '.webp'}.get(item.get('media_type'), '.png')
+                    path = directory / f'image_{i:03}{suffix}'
+                    if item.get('b64_json'):
+                        path.write_bytes(base64.b64decode(item['b64_json'], validate=True))
+                    elif item.get('url'):
+                        transport.download(item['url'], path)
+                    else:
+                        raise ConnectionError('Provider returned no image bytes or download URL')
+                    validate_artifact(path, kind)
+                    job['artifacts'].append(path.name)
+                job['usage'] = result.get('usage', {})
+            elif kind == 'voice' and provider in ('openrouter', 'openai_compatible'):
+                extra = options.get('speech_generation', {})
+                if not isinstance(extra, dict) or set(extra) - {'speed', 'instructions'}:
+                    raise ValueError('Unsupported speech generation options')
+                body = {**extra, 'model': connection.model, 'input': prompt, 'response_format': 'mp3'}
+                if options.get('voice_id'):
+                    body['voice'] = options['voice_id']
+                content = transport.request('POST', '/audio/speech', body, raw=True)
+                path = directory / 'narration.mp3'
+                path.write_bytes(content)
+                validate_artifact(path, kind)
+                job['artifacts'] = [path.name]
             elif provider == 'elevenlabs':
                 voice = options.get('voice_id', '')
                 if not voice:
@@ -262,17 +331,19 @@ class GenerationService:
                 path.write_bytes(content)
                 validate_artifact(path, kind)
                 job['artifacts'] = [path.name]
-            elif provider in ('comfyui', 'runway'):
+            elif provider in ('comfyui', 'runway') or (provider == 'openrouter' and kind == 'video'):
                 if not job['remote_id']:
                     if provider == 'comfyui':
                         workflow = options.get('workflow')
                         if not isinstance(workflow, dict) or not workflow or not all(isinstance(v, dict) and 'class_type' in v and isinstance(v.get('inputs'), dict) for v in workflow.values()):
                             raise ValueError('ComfyUI needs an API-format workflow object in options.workflow')
+                        if '{{model}}' in json.dumps(workflow) and not connection.model:
+                            raise ValueError('Choose a ComfyUI model ID for the workflow’s {{model}} input')
                         replacements = [0]
                         def substitute(value):
                             if isinstance(value, str):
                                 replacements[0] += value.count('{{prompt}}')
-                                return value.replace('{{prompt}}', prompt)
+                                return value.replace('{{prompt}}', prompt).replace('{{model}}', connection.model)
                             if isinstance(value, list):
                                 return [substitute(v) for v in value]
                             if isinstance(value, dict):
@@ -285,6 +356,12 @@ class GenerationService:
                         if result.get('error') or result.get('node_errors'):
                             raise ConnectionError('ComfyUI rejected workflow nodes. Check installed models and the exported API workflow.')
                         job['remote_id'] = result.get('prompt_id')
+                    elif provider == 'openrouter':
+                        extra = options.get('video_generation', {})
+                        if not isinstance(extra, dict) or set(extra) - {'duration', 'resolution', 'aspect_ratio', 'size', 'generate_audio', 'seed'}:
+                            raise ValueError('Unsupported video generation options')
+                        result = transport.request('POST', '/videos', {**extra, 'model': connection.model, 'prompt': prompt}, capture_submission=True)
+                        job['remote_id'] = result.get('id')
                     else:
                         duration = options.get('duration', 5)
                         if type(duration) is not int or not 2 <= duration <= 10:
@@ -324,7 +401,17 @@ class GenerationService:
         deadline = time.monotonic() + 1800
         while time.monotonic() < deadline:
             check_cancel(transport.cancel)
-            if provider == 'runway':
+            if provider == 'openrouter':
+                result = transport.request('GET', '/videos/' + remote)
+                if result.get('status') in ('failed', 'cancelled', 'expired'):
+                    raise ConnectionError('OpenRouter video task ' + result['status'] + '. Check provider history.')
+                if result.get('status') == 'completed':
+                    path = directory / 'video.mp4'
+                    transport.download(transport.url('/videos/' + remote + '/content'), path, authenticated=True)
+                    validate_artifact(path, 'video')
+                    job['usage'] = result.get('usage', {})
+                    return [path.name]
+            elif provider == 'runway':
                 result = transport.request('GET', '/tasks/' + remote)
                 status = result.get('status')
                 if status in ('FAILED', 'CANCELED', 'CANCELLED'):

@@ -11,6 +11,9 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QFormLayout, Q
 from .production.adapters import capability
 from .production.prompts import FORMATS, PROMPTS, VERSION
 from .production.runner import ProductionRunner, ROLE_KINDS
+from .connections.models import filter_models
+from .model_widgets import model_picker, fill_models
+from .media import atomic_json
 
 
 def action(text, callback):
@@ -67,17 +70,50 @@ class AutomationPanels:
         self.production_direction.setPlaceholderText('Optional: language, audience, visual style, tone, pronunciation…')
         self.production_direction.setMaximumHeight(85)
         form.addRow('Creative direction', self.production_direction)
-        form.addRow('3. AI connections', action('Refresh available connections', lambda: self._guard(self._refresh_production_routes)))
+        connections = QHBoxLayout()
+        connections.addWidget(action('Refresh available connections', lambda: self._guard(self._refresh_production_routes)))
+        connections.addWidget(action('Refresh model catalogs', lambda: self._guard(self._refresh_model_catalogs)))
+        form.addRow('3. AI connections', connections)
+        filters = QHBoxLayout()
+        self.production_free = QCheckBox('Free only')
+        self.production_open = QCheckBox('Open weights / local')
+        filters.addWidget(self.production_free)
+        filters.addWidget(self.production_open)
+        filters.addWidget(action('Show all models', self._show_all_production_models))
+        filters.addStretch()
+        self.production_free.toggled.connect(self._filter_production_models)
+        self.production_open.toggled.connect(self._filter_production_models)
+        form.addRow('Browse models', filters)
         self.production_routes = {}
+        self.production_models = {}
+        self.production_model_counts = {}
         labels = {'analysis': 'Analysis / planning', 'writing': 'Scripts', 'review': 'Quality review',
                   'image': 'Illustrations / references', 'video': 'Animated / cinematic clips', 'voice': 'Speech',
                   'lipsync': 'Lip-sync tool (optional)'}
         for role, label in labels.items():
             picker = self.production_routes[role] = QComboBox()
-            form.addRow(label, picker)
-        form.addRow(note('Create and test profiles in Connections / AI first. Each profile has its own model. '
-                         'Cartoon/cinematic production needs a video connection. Precise lip-sync requires a separate configured tool. '
-                         'Generated footage and captions still need creative review.'))
+            model = self.production_models[role] = model_picker()
+            row = QHBoxLayout()
+            row.addWidget(picker, 1)
+            row.addWidget(model, 1)
+            self.production_model_counts[role] = note('')
+            row.addWidget(self.production_model_counts[role])
+            picker.currentIndexChanged.connect(lambda _, r=role: self._production_model_changed(r, reset=True))
+            form.addRow(label, row)
+        self.production_voice_id = QLineEdit()
+        self.production_voice_id.setPlaceholderText('Optional; blank uses the Speech connection voice')
+        form.addRow('Speech voice ID', self.production_voice_id)
+        shortcuts = QHBoxLayout()
+        shortcuts.addWidget(action('Use Analysis model for all text tasks', lambda: self._guard(self._use_analysis_model)))
+        shortcuts.addWidget(action('Use Analysis platform for supported tasks', lambda: self._guard(self._use_analysis_platform)))
+        form.addRow(shortcuts)
+        form.addRow(action('Save task choices', lambda: self._guard(self._save_production_choices)))
+        self.production_model_notice = note('')
+        form.addRow(self.production_model_notice)
+        form.addRow(note('Choose a connection and a model for each task. Reuse a connection to share its API key; '
+                         'choose separate connections for different keys on the same platform. Blank model uses its default. '
+                         'Scripts and Quality review inherit Analysis when their connection is blank. '
+                         'Animated/cinematic clips need a video model; lip-sync uses a configured tool.'))
         self.production_start = action('Create videos', lambda: self._guard(self._start_production))
         self.production_start.setObjectName('primary')
         form.addRow(self.production_start)
@@ -158,6 +194,7 @@ class AutomationPanels:
         self.production_pages = tabs
         try:
             self._refresh_production_routes()
+            self._restore_production_choices()
             self._refresh_production_runs()
         except (ValueError, OSError, KeyError, TypeError) as error:
             self.production_details.setPlainText(f'Could not load production settings: {error}')
@@ -172,8 +209,11 @@ class AutomationPanels:
 
     def _refresh_production_routes(self):
         _, profiles = self.connection_store.load()
+        self.production_profiles = profiles
         for role, picker in self.production_routes.items():
             previous = picker.currentData()
+            model = self.production_models[role].currentText()
+            picker.blockSignals(True)
             picker.clear()
             picker.addItem('Not selected' if role not in ('writing', 'review') else 'Use Analysis / planning connection', '')
             if role == 'voice':
@@ -186,16 +226,105 @@ class AutomationPanels:
                 picker.setCurrentIndex(index)
             elif role == 'voice':
                 picker.setCurrentIndex(1)
+            picker.blockSignals(False)
+            self._production_model_changed(role, selected=model)
         self.production_profile_ids.setPlainText('\n'.join(f'{p.name}: {p.id}' for p in profiles if p.enabled))
+        self._filter_production_models()
+
+    def _production_model_changed(self, role, *, reset=False, selected=None):
+        key = self.production_routes[role].currentData()
+        if not key and role in ('writing', 'review'):
+            key = self.production_routes['analysis'].currentData()
+        conn = next((c for c in getattr(self, 'production_profiles', []) if c.id == key), None)
+        picker = self.production_models[role]
+        value = selected if selected is not None else ('' if reset else picker.currentText())
+        count = fill_models(picker, conn, self.generation_service.catalog, ROLE_KINDS[role],
+                            free=self.production_free.isChecked(), open_weights=self.production_open.isChecked(), selected=value)
+        total = len(filter_models(self.generation_service.catalog.records(conn), ROLE_KINDS[role])) if conn else 0
+        self.production_model_counts[role].setText(f'{count} / {total} models' if conn else
+                                                  ('Installed voice' if key == 'local_speech' else 'Choose connection'))
+        if role == 'analysis':
+            for other in ('writing', 'review'):
+                if not self.production_routes[other].currentData():
+                    self._production_model_changed(other)
+
+    def _filter_production_models(self, *_):
+        for role in self.production_routes:
+            self._production_model_changed(role)
+        self.production_model_notice.setText('Search or enter a model ID. Lists match each task’s output. '
+            'Counts show displayed / total models. Show all models clears price and license filters. '
+            'Refresh model catalogs retrieves the latest lists; failed refreshes keep cached models.')
+
+    def _show_all_production_models(self):
+        self.production_free.setChecked(False)
+        self.production_open.setChecked(False)
+        self._filter_production_models()
+
+    def _use_analysis_model(self):
+        key = self.production_routes['analysis'].currentData()
+        if not key:
+            raise ValueError('Choose an Analysis connection first.')
+        model = self.production_models['analysis'].currentText()
+        for role in ('writing', 'review'):
+            self.production_routes[role].setCurrentIndex(self.production_routes[role].findData(key))
+            self.production_models[role].setEditText(model)
+
+    def _use_analysis_platform(self):
+        key = self.production_routes['analysis'].currentData()
+        conn = next((c for c in self.production_profiles if c.id == key), None)
+        if not conn:
+            raise ValueError('Choose an Analysis connection first.')
+        self._use_analysis_model()
+        for role in ('image', 'voice', 'video'):
+            picker = self.production_routes[role]
+            index = picker.findData(key)
+            if index < 0:
+                continue
+            picker.setCurrentIndex(index)
+            records = filter_models(self.generation_service.catalog.records(conn), ROLE_KINDS[role],
+                                    free=self.production_free.isChecked(), open_weights=self.production_open.isChecked())
+            if records:
+                model = next((r['id'] for r in records if r['id'] == conn.model), None)
+                self.production_models[role].setEditText(model or sorted(records, key=lambda r: (not r['free'], r['id']))[0]['id'])
+
+    def _save_production_choices(self):
+        atomic_json(self.library.root / '.studio_task_models.json', {
+            'routes': {r: p.currentData() for r, p in self.production_routes.items()},
+            'models': {r: p.currentText().strip() for r, p in self.production_models.items()},
+            'voice': self.production_voice_id.text().strip(), 'free': self.production_free.isChecked(),
+            'open_weights': self.production_open.isChecked()})
+        self._set_status('Task connections and model choices saved.')
+
+    def _restore_production_choices(self):
+        path = self.library.root / '.studio_task_models.json'
+        if not path.exists():
+            return
+        data = json.loads(path.read_text(encoding='utf-8'))
+        if not isinstance(data, dict) or any(not isinstance(data.get(k, {}), dict) for k in ('routes', 'models')):
+            raise ValueError('Saved task choices need routes and models objects.')
+        if any(not isinstance(v, str) for v in data.get('models', {}).values()) or not isinstance(data.get('voice', ''), str):
+            raise ValueError('Saved model and voice IDs must be text.')
+        for role, picker in self.production_routes.items():
+            index = picker.findData(data.get('routes', {}).get(role))
+            if index >= 0:
+                picker.setCurrentIndex(index)
+            self.production_models[role].setEditText(data.get('models', {}).get(role, ''))
+        self.production_voice_id.setText(data.get('voice', ''))
+        self.production_free.setChecked(bool(data.get('free')))
+        self.production_open.setChecked(bool(data.get('open_weights')))
 
     def _production_config(self):
         routes = {role: picker.currentData() for role, picker in self.production_routes.items()}
+        models = {role: picker.currentText().strip() for role, picker in self.production_models.items()}
         for role in ('writing', 'review'):
+            if not routes[role] and not models[role]:
+                models[role] = models['analysis']
             routes[role] = routes[role] or routes['analysis']
         return {'title': self.production_title.text().strip(), 'format': self.production_format.currentData(),
                 'adaptation': self.production_approach.currentData(), 'episodes': self.production_count.value(),
                 'seconds': self.production_seconds.value(), 'direction': self.production_direction.toPlainText().strip(),
-                'routes': routes, 'max_calls': self.production_limit.value(), 'resolution': self.production_resolution.currentData(),
+                'routes': routes, 'models': models, 'voices': {'voice': self.production_voice_id.text().strip()},
+                'max_calls': self.production_limit.value(), 'resolution': self.production_resolution.currentData(),
                 'references': self.production_references.isChecked(), 'pause_after_plan': self.production_plan_pause.isChecked(),
                 'local_voice': self.production_local_voice.text().strip(),
                 'speaker_routes': json.loads(self.production_speakers.toPlainText())}
@@ -204,6 +333,7 @@ class AutomationPanels:
         if self.episode and not self.save_all(quiet=True):
             return
         state = self.production_runner.create(self.production_source.text().strip(), self._production_config())
+        self._save_production_choices()
         self._refresh_production_runs(state['id'])
         self.production_pages.setCurrentIndex(2)
         self._run_task(lambda progress, cancel: self.production_runner.run(state['id'], cancel=cancel, progress=progress),

@@ -7,6 +7,9 @@ __pycache__/
 *.mp4.lock
 .vns-cache/
 .studio_connections.json
+.studio_models.json
+.studio_task_models.json
+temp_api.txt
 .generation_jobs/
 .production_runs/
 /build/

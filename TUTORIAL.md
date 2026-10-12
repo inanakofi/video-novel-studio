@@ -410,7 +410,7 @@ For OpenRouter:
 
 Discovery only proves that the endpoint responded. It does not prove the model can follow the production JSON contracts. Test a small draft first. The adapter follows OpenRouter's [chat-completions API](https://openrouter.ai/docs/api/reference/overview).
 
-For another service implementing the same `/chat/completions` interface, add an **OpenAI-compatible text** profile and use that service's documented base URL, model and credential. Compatibility must include the non-streaming response format used by this app. The profile is a text adapter; it does not expose that provider's image or audio endpoints.
+For another service, add an **OpenAI-compatible / open model server** profile and use its documented base URL, model and credential. Text uses non-streaming `/chat/completions`; images use `/images/generations`; speech uses `/audio/speech` with MP3 output. The server must implement the endpoint for the task you select. This also supports locally served open models, such as speech models behind a compatible TTS server.
 
 Optional Provider options example:
 
@@ -557,14 +557,28 @@ The current guided workflow exports vertical video. It creates a separate story 
 
 Click **Refresh available connections** after saving your profiles in Connections / AI.
 
+Each row now has **connection + model**. Save one connection per API key, then
+choose different model IDs beside different tasks, or reuse the same model across
+text tasks. Blank model uses the connection default. Scripts/Quality review with
+blank connections inherit Analysis and its model, unless you enter a model override.
+Use the two **Use Analysis…** shortcuts to fill shared-platform choices, and
+**Save task choices** to restore them on the next launch. Free/open-weights filters
+use discovered output capabilities; they do not remove previously selected or
+manually entered IDs. Refresh discovery when the platform's model list changes.
+
+For another key on the same platform, add a connection or **Duplicate with same
+key**, then replace its key. The copy has an independent encrypted credential.
+For local ComfyUI model selection, replace the workflow's model input with
+`{{model}}`; Studio substitutes the model chosen for that task.
+
 | Task | Required connection | Practical starting choice |
 |---|---|---|
 | Analysis / planning | Text model or configured text tool | A model that follows JSON and handles long context |
 | Scripts | Text model/tool | Leave “Use Analysis…” initially, or choose a separate writer |
 | Quality review | Text model/tool | A separate reviewer if available, otherwise use Analysis |
-| Illustrations / references | Image-capable ComfyUI or configured tool | Your tested image workflow |
-| Animated / cinematic clips | Runway, video ComfyUI or configured tool | Your tested short-video workflow |
-| Speech | Installed Windows speech, ElevenLabs or configured tool | A tested voice profile |
+| Illustrations / references | OpenRouter, compatible image server, ComfyUI or configured tool | A model with image output or a tested image workflow |
+| Animated / cinematic clips | OpenRouter, Runway, video ComfyUI or configured tool | A model with video output or a tested short-video workflow |
+| Speech | OpenRouter, compatible speech server, installed Windows speech, ElevenLabs or configured tool | A model with speech output and its optional voice ID |
 | Lip-sync tool | Optional configured HTTP/MCP tool | Only select one that accepts final audio and video |
 
 Narrated production requires illustrations but not a video connection. Cartoon/cinematic production requires video; image generation is needed only if you also enable reusable references. You can use entirely different providers for planning, writing, review, images, video and speech.

@@ -99,12 +99,12 @@ Existing built-in adapters remain the transport layer:
 | Task | Built-in providers | Extensible route |
 |---|---|---|
 | Analysis, planning, writing, review | Ollama, OpenRouter, OpenAI-compatible text | `production.story` HTTP/MCP mapping |
-| Illustrations/references | ComfyUI image workflow | `production.image` |
-| Speech | Installed Windows speech, ElevenLabs | `production.voice` |
-| Video | Runway text-to-video, ComfyUI video workflow | `production.video` |
+| Illustrations/references | OpenRouter, compatible image server, ComfyUI image workflow | `production.image` |
+| Speech | OpenRouter, compatible speech server, installed Windows speech, ElevenLabs | `production.voice` |
+| Video | OpenRouter, Runway text-to-video, ComfyUI video workflow | `production.video` |
 | Lip-sync | No bundled engine | `production.lipsync` |
 
-A profile carries the model selection, so different tasks can use different providers/models without changing an in-flight connection. Per-character overrides use separate voice profiles. A custom tool mapping contains a fixed tool name or HTTP path and an argument template; no language model selects arbitrary tools or filesystem destinations.
+Each task selects a connection and an optional model override. Reusing a connection shares its key across models; separate connections allow different keys on the same platform. The run records task models and the original connection snapshots for recovery, without changing an in-flight connection. Per-character overrides can also specify a model through `speaker_models`. A custom tool mapping contains a fixed tool name or HTTP path and an argument template; no language model selects arbitrary tools or filesystem destinations.
 
 Custom media tools return completed artifacts as a stage-confined local path, downloadable URL, base64 payload or supported MCP media block. Remote input references can be data URIs; local tools can consume paths. Input encoding is performed only if requested by the configured template. Templates and response formats are documented in the tutorial.
 

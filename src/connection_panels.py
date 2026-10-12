@@ -14,6 +14,7 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QFormLayout, Q
 from .connections.config import Connection, ConnectionStore, SecretStore, PRESETS
 from .connections.generation import GenerationService, prompt_for, episode_from_draft, parse_script, script_markdown, validate_artifact
 from .connections.tools import call_http, mcp_action
+from .model_widgets import model_picker, fill_models
 from .media import atomic_json
 from .scene_builder import save_episode
 from .story_manager import atomic_text
@@ -86,17 +87,26 @@ class ConnectionPanels:
         self.connection_enabled = QCheckBox('Enable this connection')
         self.connection_name = QLineEdit()
         self.connection_url = QLineEdit()
-        self.connection_model = QComboBox()
-        self.connection_model.setEditable(True)
-        self.connection_model.setInsertPolicy(QComboBox.InsertPolicy.NoInsert)
-        self.connection_model.lineEdit().setPlaceholderText('Enter model ID or use Test / discover')
+        self.connection_model = model_picker()
+        self.connection_model_kind = QComboBox()
+        for title, kind in [('All models', ''), ('Text', 'story'), ('Illustrations', 'image'), ('Speech', 'voice'), ('Video', 'video')]:
+            self.connection_model_kind.addItem(title, kind)
+        self.connection_free = QCheckBox('Free only')
+        self.connection_open = QCheckBox('Open weights / local')
+        filters = QHBoxLayout()
+        for widget in (self.connection_model_kind, self.connection_free, self.connection_open):
+            filters.addWidget(widget)
+        filters.addWidget(action('Show all models', self._show_all_connection_models))
+        self.connection_model_kind.currentIndexChanged.connect(self._filter_connection_models)
+        self.connection_free.toggled.connect(self._filter_connection_models)
+        self.connection_open.toggled.connect(self._filter_connection_models)
         self.connection_env = QLineEdit()
         self.connection_env.setPlaceholderText('Optional environment variable name; leave empty for stored key')
         self.connection_key = QLineEdit()
         self.connection_key.setEchoMode(QLineEdit.EchoMode.Password)
         self.connection_key.setPlaceholderText('Enter a new key to save securely; blank keeps the existing key')
         self.connection_voice = QLineEdit()
-        self.connection_voice.setPlaceholderText('ElevenLabs voice ID; Test / discover lists voices')
+        self.connection_voice.setPlaceholderText('Optional voice ID; model defaults apply when supported')
         self.connection_options = QPlainTextEdit('{}')
         self.connection_options.setMinimumHeight(145)
         self.connection_options.setPlaceholderText('Advanced provider options as JSON; never put credentials here')
@@ -104,8 +114,12 @@ class ConnectionPanels:
         form.addRow(self.connection_enabled)
         form.addRow('Name', self.connection_name)
         form.addRow('Base URL / MCP endpoint', self.connection_url)
-        form.addRow('Model ID', self.connection_model)
-        form.addRow('Voice ID (ElevenLabs)', self.connection_voice)
+        form.addRow('Browse models', filters)
+        form.addRow('Default model (optional)', self.connection_model)
+        form.addRow('Default voice ID', self.connection_voice)
+        form.addRow(note('Save one connection per API key. Choose models beside each task in Create videos or Generate. '
+                         'Duplicate a connection to reuse its key with another default model, or enter a different key. '
+                         'Ollama, ComfyUI and compatible local servers can serve open models.'))
         form.addRow('Credential environment', self.connection_env)
         form.addRow('Secure API key', self.connection_key)
         form.addRow('Provider options', self.connection_options)
@@ -124,6 +138,8 @@ class ConnectionPanels:
         self.test_connection_button = action('Save & test / discover', lambda: self._guard(self._test_connection))
         buttons.addWidget(self.save_connection_button)
         buttons.addWidget(self.test_connection_button)
+        self.duplicate_connection_button = action('Duplicate with same key', lambda: self._guard(self._duplicate_connection))
+        buttons.addWidget(self.duplicate_connection_button)
         buttons.addWidget(action('Remove connection', lambda: self._guard(self._remove_connection)))
         layout.addLayout(buttons)
         layout.addWidget(self.connection_notice)
@@ -136,9 +152,23 @@ class ConnectionPanels:
         self.generation_connection = QComboBox()
         self.generation_connection.currentIndexChanged.connect(self._generation_connection_changed)
         self.generation_kind = QComboBox()
+        self.generation_kind.currentIndexChanged.connect(lambda _: self._generation_model_changed(reset=True))
         row.addWidget(self.generation_connection, 2)
         row.addWidget(self.generation_kind, 1)
         layout.addLayout(row)
+        models = QFormLayout()
+        self.generation_model = model_picker()
+        self.generation_voice = QLineEdit()
+        self.generation_voice.setPlaceholderText('Optional voice ID; blank uses the connection default')
+        models.addRow('Model for this task', self.generation_model)
+        models.addRow('Voice for speech', self.generation_voice)
+        self.generation_model_notice = note('')
+        models.addRow(self.generation_model_notice)
+        browse = QHBoxLayout()
+        browse.addWidget(action('Show all models', self._show_all_connection_models))
+        browse.addWidget(action('Refresh model catalogs', lambda: self._guard(self._refresh_model_catalogs)))
+        models.addRow(browse)
+        layout.addLayout(models)
         layout.addWidget(note('1. Describe the result. Select context to include, then build and review the exact prompt.'))
         self.generation_instruction = QPlainTextEdit()
         self.generation_instruction.setPlaceholderText('For example: draft a three-scene episode ending with the arrival of a mysterious letter.')
@@ -260,6 +290,8 @@ class ConnectionPanels:
             picker.blockSignals(False)
         self._generation_connection_changed()
         self.mcp_tool_picker.clear()
+        if hasattr(self, 'production_routes'):
+            self._refresh_production_routes()
 
     def _connection_selected(self, *_):
         key = self.connection_picker.currentData()
@@ -269,8 +301,9 @@ class ConnectionPanels:
         if conn:
             self.connection_name.setText(conn.name)
             self.connection_url.setText(conn.base_url)
-            self.connection_model.clear()
-            self.connection_model.setEditText(conn.model)
+            fill_models(self.connection_model, conn, self.generation_service.catalog,
+                        self.connection_model_kind.currentData() or None,
+                        free=self.connection_free.isChecked(), open_weights=self.connection_open.isChecked(), selected=conn.model)
             self.connection_env.setText(conn.key_env)
             self.connection_enabled.setChecked(conn.enabled)
             self.connection_voice.setText(conn.options.get('voice_id', ''))
@@ -278,6 +311,41 @@ class ConnectionPanels:
             self.connection_notice.setText(f'{PRESETS[conn.provider][0]} · '
                 + ('Credential configured' if self.secret_store.exists(conn) else 'No credential configured')
                 + ' · Endpoint discovery does not prove generation is available.')
+
+    def _filter_connection_models(self, *_):
+        conn = next((c for c in self.connection_profiles if c.id == self.selected_connection_id), None)
+        selected = self.connection_model.currentText()
+        count = fill_models(self.connection_model, conn, self.generation_service.catalog,
+                            self.connection_model_kind.currentData() or None, free=self.connection_free.isChecked(),
+                            open_weights=self.connection_open.isChecked(), selected=selected)
+        self.connection_notice.setText(f'{count} matching models. Discover to refresh. You can also enter a model ID.')
+        self._generation_model_changed()
+
+    def _show_all_connection_models(self):
+        self.connection_free.setChecked(False)
+        self.connection_open.setChecked(False)
+        self.connection_model_kind.setCurrentIndex(0)
+        self._filter_connection_models()
+
+    def _refresh_model_catalogs(self):
+        def complete(report):
+            self._filter_connection_models()
+            self._refresh_production_routes()
+            self.production_model_notice.setText(report)
+            self.connection_notice.setText(report)
+            self._set_status('Model catalog refresh finished. See discovery results beside the model choices.')
+        self._run_task(lambda progress, cancel: self.generation_service.refresh_catalogs(cancel, progress), complete)
+
+    def _duplicate_connection(self):
+        original = self._save_connection()
+        conn = replace(original, id=uuid.uuid4().hex, name=original.name + ' (copy)')
+        if not original.key_env:
+            secret = self.secret_store.get(original)
+            if secret:
+                self.secret_store.put(conn.id, secret)
+        self.connection_profiles.append(conn)
+        self.connection_store.save(self.connection_mode.currentData(), self.connection_profiles)
+        self._refresh_connections(conn.id)
 
     def _add_connection(self):
         conn = Connection.preset(self.provider_picker.currentData())
@@ -296,7 +364,7 @@ class ConnectionPanels:
         options = json.loads(self.connection_options.toPlainText())
         if not isinstance(options, dict):
             raise ValueError('Provider options must be a JSON object')
-        if conn.provider == 'elevenlabs':
+        if conn.provider in ('elevenlabs', 'openrouter', 'openai_compatible'):
             options['voice_id'] = self.connection_voice.text().strip()
         updated = replace(conn, name=self.connection_name.text().strip(), base_url=self.connection_url.text().strip(),
                           model=self.connection_model.currentText().strip(), enabled=self.connection_enabled.isChecked(),
@@ -347,10 +415,10 @@ class ConnectionPanels:
             self._set_status('Use List MCP tools or an explicit HTTP request to test this connection.')
             return
         def complete(result):
-            self.connection_model.clear()
-            self.connection_model.addItems(result['models'])
-            self.connection_model.setEditText(conn.model)
-            self.connection_notice.setText(result['status'] + '. Select a model and save the connection.')
+            self._filter_connection_models()
+            self.connection_notice.setText(result['status'] + f'. {len(result["catalog"])} models listed; choose a compatible model beside each task.')
+            if hasattr(self, 'production_routes'):
+                self._refresh_production_routes()
             self.software_result.setPlainText(json.dumps(result['response'], indent=2, ensure_ascii=False))
             self._set_status(result['status'] + '; details are in Software tools.')
         self._run_task(lambda progress, cancel: self.generation_service.discover(conn.id, cancel), complete)
@@ -358,11 +426,24 @@ class ConnectionPanels:
     def _generation_connection_changed(self, *_):
         conn = next((c for c in self.connection_profiles if c.id == self.generation_connection.currentData()), None)
         old = self.generation_kind.currentText()
+        self.generation_kind.blockSignals(True)
         self.generation_kind.clear()
         if conn:
             self.generation_kind.addItems(PRESETS[conn.provider][2])
             if old in PRESETS[conn.provider][2]:
                 self.generation_kind.setCurrentText(old)
+        self.generation_kind.blockSignals(False)
+        self._generation_model_changed(reset=True)
+
+    def _generation_model_changed(self, *_, reset=False):
+        if not hasattr(self, 'generation_model'):
+            return
+        conn = next((c for c in self.connection_profiles if c.id == self.generation_connection.currentData()), None)
+        fill_models(self.generation_model, conn, self.generation_service.catalog, self.generation_kind.currentText(),
+                    free=self.connection_free.isChecked(), open_weights=self.connection_open.isChecked(),
+                    selected='' if reset else self.generation_model.currentText())
+        self.generation_model_notice.setText(self.generation_model.toolTip())
+        self.generation_voice.setEnabled(self.generation_kind.currentText() == 'voice')
 
     def _prepare_generation_prompt(self):
         if not self.generation_kind.currentText():
@@ -389,7 +470,9 @@ class ConnectionPanels:
             raise ValueError('Choose a connection and build or enter the exact prompt first')
         target = {'episode': str(self.episode.directory.relative_to(self.library.root)) if self.episode else '',
                   'scene_id': self.episode.scenes[self.scene_index].scene_id if self.episode and self.scene_index >= 0 else None}
-        self._run_task(lambda progress, cancel: self.generation_service.run(key, kind, prompt, progress=progress, cancel=cancel, target=target),
+        model, voice = self.generation_model.currentText().strip(), self.generation_voice.text().strip()
+        self._run_task(lambda progress, cancel: self.generation_service.run(key, kind, prompt, progress=progress, cancel=cancel, target=target,
+                                                                         model=model, voice=voice if kind == 'voice' else None),
                        self._generation_complete)
 
     def _generation_complete(self, job):

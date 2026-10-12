@@ -1,0 +1,32 @@
+{
+  "analysis": {
+    "expected": 458,
+    "displayed": 458,
+    "all_ids_match": true
+  },
+  "writing": {
+    "expected": 458,
+    "displayed": 458,
+    "all_ids_match": true
+  },
+  "review": {
+    "expected": 458,
+    "displayed": 458,
+    "all_ids_match": true
+  },
+  "image": {
+    "expected": 61,
+    "displayed": 61,
+    "all_ids_match": true
+  },
+  "voice": {
+    "expected": 32,
+    "displayed": 32,
+    "all_ids_match": true
+  },
+  "video": {
+    "expected": 30,
+    "displayed": 30,
+    "all_ids_match": true
+  }
+}

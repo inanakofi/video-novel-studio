@@ -17,22 +17,28 @@ FFmpeg exports do not import an AI SDK or require an account.
 
 | Connection | Implemented capability | Required from you |
 |---|---|---|
-| **OpenRouter** | Model discovery, story bibles, structured episode scripts, usage/cost metadata when returned | API key and a supported text model ID |
+| **OpenRouter** | All-modality model discovery, text, images, MP3 speech, asynchronous video, usage/cost metadata when returned | API key and a model with the required output capability |
 | Ollama | Installed-model discovery, story and structured script drafts | Running Ollama with a downloaded text model |
-| OpenAI-compatible text | `/models` and non-streaming `/chat/completions` | Compatible endpoint, model and credentials if required |
-| ElevenLabs | Voice discovery and MP3 narration generation | API key, voice ID and a compatible speech model |
-| ComfyUI | Queue, poll and download saved image/video workflow outputs | Running ComfyUI, installed models/nodes and an API-format workflow |
+| OpenAI-compatible / open model server | `/models`, `/chat/completions`, `/images/generations`, `/audio/speech` | A server implementing the selected task's endpoint, models and credentials if required |
+| ElevenLabs | Speech-model and voice discovery, MP3 narration generation | API key, voice ID and a compatible speech model |
+| ComfyUI | Workflow model discovery, queue, poll and download saved image/video outputs | Running ComfyUI, installed models/nodes and an API-format workflow |
 | Runway | Submit text-to-video, poll a saved task ID, download MP4 | API key, text-to-video model ID and model-compatible duration/ratio |
 | JSON HTTP API | Explicit GET/POST/PUT/PATCH/DELETE requests and JSON results | API endpoint and optional Bearer key |
 | MCP stdio / Streamable HTTP | Tool discovery, schema inspection and explicit tool calls | Optional MCP dependency and a trusted server |
 
-These are adapters, not bundled models. OpenRouter and the compatible text
-adapter currently handle **text only**; their image/audio/video modalities are
-not implemented. Use ElevenLabs, ComfyUI or Runway for the listed media tasks.
+These are adapters, not bundled models. OpenRouter uses `/images`, `/audio/speech`
+and `/videos` for media. Video task IDs are saved before polling so Resume does
+not submit another generation. Music/audio-only models are excluded from the
+Speech picker; use a model advertising **speech** output for exact narration.
 
-Cloud adapters have been tested against local protocol fixtures, **not with live
-provider accounts**. The fixtures exercise requests, response parsing, real media
-downloads, error handling and recovery; they do not perform AI inference.
+Protocol fixtures exercise requests, response parsing, real media downloads,
+error handling and recovery. On 2026-10-12, live OpenRouter tests using the supplied
+CEO manuscript produced a valid structured script with `openrouter/free` and
+playable MP3 speech with `fish-audio/s2.1-pro-free:free`. The zero-priced Ming image
+model was rejected with HTTP 402 because the test account had never purchased
+credits. No complete AI video was produced. See
+[live results](exports/verification/openrouter-models-live.json). Video generation
+is covered by protocol fixtures; it was not tested with a paid live model.
 Actual local AI inference also remains untested because no Ollama/ComfyUI model
 service is installed here. Real MCP stdio and HTTP calls, local media rendering,
 Windows key encryption, and the desktop workflow have been exercised.
@@ -44,10 +50,10 @@ Windows key encryption, and the desktop workflow have been exercised.
 2. Select **Online and local services**, enable the profile, and enter your
    key in **Secure API key**. The preset URL is
    `https://openrouter.ai/api/v1`.
-3. Click **Save & test / discover**. Discovery retrieves model IDs; it does not
-   test a billable generation or prove a model's suitability. Choose a text
-   model you have access to, then click **Save connection**.
-4. Open **Generate**, choose OpenRouter and **story** or **script**, describe
+3. Click **Save & test / discover**. Discovery caches model IDs, output
+   capabilities, prices and open-weights metadata. A default model is optional.
+   Use **Free only** or **Open weights / local** to narrow suggestions.
+4. Open **Generate**, choose OpenRouter, the task and **Model for this task**, describe
    what you want, and optionally include the current script, bibles or continuity.
 5. Click **Build prompt for review**. The editable prompt is the text that will
    be transmitted. For scripts it includes the structured output instructions.
@@ -64,12 +70,92 @@ Optional text parameters go in Provider options, for example:
 
 Models differ. Some use `max_completion_tokens` instead of `max_tokens` or
 reject `temperature`. Leave options empty if unsure, then consult that model's
-documentation. Model lists are fetched only when requested, not hardcoded.
+documentation. OpenRouter model lists are fetched only when requested, not hardcoded.
 Provider-reported usage/cost is saved with the job; there is no universal price
 estimate or account spending cap in this release. Set limits with your provider.
 
 OpenRouter's documented interface uses Bearer authentication and its normalized
 chat-completions response. See the [official OpenRouter API reference](https://openrouter.ai/docs/api/reference/overview).
+
+## Reuse a platform across tasks
+
+Save **one connection per API key**. In **Manuscript → videos**, each task has a
+connection selector and a searchable model selector. Analysis, Scripts and
+Quality review can use different models through the same connection/key, or the
+same model. Illustrations, Speech and Video can share that connection too, using
+models that generate those outputs. Blank model uses the connection's default.
+Blank Scripts/Quality review connection inherits Analysis and its model unless
+you choose a model override. **Save task choices** restores these choices next time.
+
+**Use Analysis model for all text tasks** copies the model/key to writing and
+review. **Use Analysis platform for supported tasks** also selects that platform
+for media tasks and displays matching catalog models. Review those choices
+before starting. Filters narrow suggestions; existing choices and manually typed
+IDs remain available. A zero listed price does not guarantee account access.
+
+For multiple keys on the same platform, add more connections, or use **Duplicate
+with same key** and replace the copied key. Duplication copies the credential into
+a separate encrypted vault entry; later key changes affect only that copy. An
+environment-variable credential keeps referring to the same variable until you
+change its name. Model discovery is cached per provider/base URL and reused by
+OpenRouter connections to that endpoint. Other catalogs are isolated by connection;
+ComfyUI lists also follow the configured workflow. No discovery occurs automatically
+at startup.
+
+**Show all models** clears both price and license filters without replacing your
+chosen model. Each manuscript task shows **displayed / total** model counts.
+**Refresh model catalogs** in manuscript setup or Generate refreshes all enabled
+generation connections in the background. Failed refreshes preserve cached lists
+and show the failure. Compatible servers with `has_more`/`last_id` pagination are
+read through the final page. Lists are searchable and have no item-count limit.
+
+ElevenLabs speech choices come from `/models` and its `can_do_text_to_speech`
+capability, separately from voice IDs. ComfyUI choices come from `/object_info`
+for the workflow inputs containing `{{model}}`; one selection must satisfy all
+such inputs. A fixed-model workflow needs no model override. Runway has no standard
+model-list endpoint: its 16 text-to-video suggestions were checked against the
+[official SDK schema](https://github.com/runwayml/sdk-python/blob/main/src/runwayml/types/text_to_video_create_params.py)
+on 2026-10-12. Set duration and ratio to values accepted by the chosen model;
+these suggestions do not establish account access and may need updating.
+
+HTTP/MCP tools can provide their full model choices in `options.models`, alongside
+their existing `production` templates. This also supports the Lip-sync selector:
+
+```json
+{"models": [
+  {"id": "your-speech-model", "output_modalities": ["speech"], "tasks": ["voice"]},
+  {"id": "your-lipsync-model", "output_modalities": ["video"], "tasks": ["lipsync"]}
+]}
+```
+
+Use the exact IDs supported by that tool. Simple model-ID strings are also accepted.
+When a server omits output capabilities, its full list remains selectable and the
+tooltip labels compatibility as unknown. A model's presence does not guarantee
+quota, permissions, price, or support for every generation parameter.
+
+Open models work through Ollama for text, compatible servers for text/image/speech,
+ComfyUI workflows for image/video, or your HTTP/MCP tools. Open weights are inferred
+from the platform's model repository metadata and are distinct from free pricing;
+check each license. Enter local model IDs manually when the server's catalog does
+not advertise modalities. In ComfyUI, put `{{model}}` in the checkpoint/model input
+to use task model selection; otherwise the workflow keeps its configured model.
+
+Optional OpenRouter media options:
+
+```json
+{
+  "image_generation": {"aspect_ratio": "9:16", "output_format": "png"},
+  "voice_id": "your-model-supported-voice",
+  "speech_generation": {"instructions": "Warm, clear delivery"},
+  "video_generation": {"duration": 5, "aspect_ratio": "9:16"}
+}
+```
+
+Use options the selected model supports. Speech has a per-task voice ID field;
+blank keeps the connection's voice/default. See the official
+[Image API](https://openrouter.ai/docs/guides/overview/multimodal/image-generation),
+[Speech API](https://openrouter.ai/docs/guides/overview/multimodal/tts), and
+[Video API](https://openrouter.ai/docs/guides/overview/multimodal/video-generation).
 
 ## Local AI, voice and video
 

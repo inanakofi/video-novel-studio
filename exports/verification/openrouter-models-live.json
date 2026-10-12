@@ -1,0 +1,62 @@
+{
+  "connection_id": "defad065bd9b48838d3256e5fae4f71c",
+  "manuscript": "THE_CEO’S_HIDDEN_LOVE.txt",
+  "catalog_models": 659,
+  "selected_free_models": {
+    "story": "openrouter/free",
+    "image": "inclusionai/ming-image-0.1-design",
+    "voice": "fish-audio/s2.1-pro-free:free"
+  },
+  "checks": {
+    "story": {
+      "status": "ready",
+      "model": "openrouter/free",
+      "job_id": "c4361e6292b1406c9a038b8ffd34be0a",
+      "artifacts": [
+        "draft.txt"
+      ],
+      "usage": {
+        "prompt_tokens": 404,
+        "completion_tokens": 3171,
+        "total_tokens": 3575,
+        "cost": 0,
+        "is_byok": false,
+        "prompt_tokens_details": {
+          "cached_tokens": 0,
+          "cache_write_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "cost_details": {
+          "upstream_inference_cost": 0,
+          "upstream_inference_prompt_cost": 0,
+          "upstream_inference_completions_cost": 0
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 3277,
+          "image_tokens": 0,
+          "audio_tokens": 0
+        }
+      },
+      "script_valid": true,
+      "saved_sample": "exports/verification/ceo-openrouter-draft.json"
+    },
+    "image": {
+      "status": "failed",
+      "model": "inclusionai/ming-image-0.1-design",
+      "error": "OpenRouter (test key): HTTP 402. Insufficient credits. This account never purchased credits. Make sure your key is on the correct account or org, and if so, purchase more at https://openrouter.ai/settings/credits Check the endpoint, model, credentials and provider account. No automatic retry was made."
+    },
+    "voice": {
+      "status": "ready",
+      "model": "fish-audio/s2.1-pro-free:free",
+      "job_id": "c02566bd224441ceae53e545b8daac07",
+      "artifacts": [
+        "narration.mp3"
+      ],
+      "usage": {},
+      "saved_sample": "exports/verification/ceo-openrouter-narration.mp3",
+      "duration_seconds": 6.060313
+    }
+  },
+  "image_account_requirement": "OpenRouter rejected the zero-priced image model because this free-tier account has never purchased credits."
+}
