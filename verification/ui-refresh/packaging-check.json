@@ -1,0 +1,12 @@
+{
+  "wheel": "video_novel_studio-1.2.0-py3-none-any.whl",
+  "packaged_theme_assets": [
+    "src/theme_assets/dark-check.png",
+    "src/theme_assets/dark-down.png",
+    "src/theme_assets/dark-up.png",
+    "src/theme_assets/light-check.png",
+    "src/theme_assets/light-down.png",
+    "src/theme_assets/light-up.png"
+  ],
+  "passed": true
+}

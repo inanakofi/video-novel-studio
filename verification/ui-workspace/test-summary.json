@@ -1,0 +1,9 @@
+{
+  "tests": 145,
+  "failures": 0,
+  "errors": 0,
+  "skipped": 0,
+  "passed": true,
+  "gui_tests_enabled": true,
+  "platform": "Qt offscreen, Fusion, registered Windows Segoe UI fonts"
+}

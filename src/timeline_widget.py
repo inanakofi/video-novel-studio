@@ -5,6 +5,8 @@ from PySide6.QtWidgets import QWidget
 
 from .settings import settings_for, card_durations
 from .timeline import total_duration
+from .theme import THEMES
+from .ui_widgets import MOTION_LABELS, TRANSITION_LABELS
 
 
 class TimelineWidget(QWidget):
@@ -21,6 +23,7 @@ class TimelineWidget(QWidget):
         self.effects = []
         self.duration, self.scale, self.playhead = 1, 28, 0
         self.blocks, self.drag, self.selection = [], None, None
+        self.colors = THEMES['light']
         self.setMinimumHeight(245)
         self.setMouseTracking(True)
         self.setToolTip('Drag caption edges to trim or its middle to move. Drag scene/transition right edges. Drag sound effects to move. Click ruler or waveform to seek.')
@@ -29,6 +32,10 @@ class TimelineWidget(QWidget):
         self.episode, self.cues, self.envelope = episode, list(cues), envelope
         self.effects = effects or []
         self.duration = total_duration(episode) if episode else 1
+        self._layout()
+
+    def set_theme(self, theme):
+        self.colors = THEMES[theme]
         self._layout()
 
     def set_zoom(self, scale):
@@ -53,19 +60,19 @@ class TimelineWidget(QWidget):
             title, end = card_durations(settings)
             for i, timed in enumerate(self.episode.timeline()):
                 start, stop = title + timed.start_seconds, title + timed.end_seconds
-                self._block('scene', i, start, stop, f'{timed.scene.scene_id:02} · {timed.scene.camera_motion}', '#38678c')
+                self._block('scene', i, start, stop, f'{timed.scene.scene_id:02} · {MOTION_LABELS[timed.scene.camera_motion]}', self.colors['track_scene'])
                 if timed.scene.transition != 'cut':
-                    self._block('transition', i, start, start + min(timed.scene.transition_seconds, timed.scene.duration_seconds / 2), timed.scene.transition, '#9b7355')
+                    self._block('transition', i, start, start + min(timed.scene.transition_seconds, timed.scene.duration_seconds / 2), TRANSITION_LABELS[timed.scene.transition], self.colors['track_transition'])
             if title:
-                self._block('card', -1, 0, title, 'Title', '#526378', lane='scene')
+                self._block('card', -1, 0, title, 'Title', self.colors['track_card'], lane='scene')
             if end:
-                self._block('card', -1, self.duration-end, self.duration, 'End', '#526378', lane='scene')
+                self._block('card', -1, self.duration-end, self.duration, 'End', self.colors['track_card'], lane='scene')
             if settings['music_asset']:
-                self._block('music', 0, 0, self.duration, f'Loop · {settings["music_volume"]:.0%} music', '#5e558a')
+                self._block('music', 0, 0, self.duration, f'Loop · {settings["music_volume"]:.0%} music', self.colors['track_music'])
             for i, effect in enumerate(self.effects):
-                self._block('effect', i, effect['start_seconds'], effect['start_seconds'] + effect['duration'], effect['label'], '#ac663e')
+                self._block('effect', i, effect['start_seconds'], effect['start_seconds'] + effect['duration'], effect['label'], self.colors['track_effect'])
             for i, cue in enumerate(self.cues):
-                self._block('caption', i, cue.start, cue.end, cue.text.replace('\n', ' '), '#24795f')
+                self._block('caption', i, cue.start, cue.end, cue.text.replace('\n', ' '), self.colors['track_caption'])
         self.update()
 
     def _block(self, kind, index, start, end, text, color, lane=None):
@@ -77,23 +84,23 @@ class TimelineWidget(QWidget):
     def paintEvent(self, event):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-        painter.fillRect(self.rect(), QColor('#132437'))
+        painter.fillRect(self.rect(), QColor(self.colors['surface']))
         painter.setFont(QFont('Segoe UI', 9))
         left = max(0, int((event.rect().left() - self.LABEL) / self.scale))
         right = min(int(self.duration)+1, int((event.rect().right() - self.LABEL) / self.scale)+1)
         interval = 1 if self.scale >= 45 else 5
         for seconds in range(left - left % interval, right + 1, interval):
             x = self.x_at(seconds)
-            painter.setPen(QColor('#2a3c50'))
+            painter.setPen(QColor(self.colors['timeline_grid']))
             painter.drawLine(int(x), 27, int(x), 241)
-            painter.setPen(QColor('#b9cad8'))
+            painter.setPen(QColor(self.colors['muted']))
             painter.drawText(QRectF(x+3, 2, 70, 24), Qt.AlignmentFlag.AlignLeft, f'{seconds}s')
         for name, (y, height) in self.TRACKS.items():
-            painter.setPen(QColor('#91a9bc'))
+            painter.setPen(QColor(self.colors['muted']))
             painter.drawText(QRectF(8, y, 95, height), Qt.AlignmentFlag.AlignVCenter, {'voice': 'Narration', 'effect': 'SFX', 'caption': 'Captions'}.get(name, name.title()))
         if self.envelope:
             y, height = self.TRACKS['voice']
-            painter.setPen(QPen(QColor('#67bfb7'), 1))
+            painter.setPen(QPen(QColor(self.colors['waveform']), 1))
             step = self.envelope['bin_seconds']
             peaks = self.envelope['peaks']
             start = max(0, int((event.rect().left()-self.LABEL)/self.scale/step))
@@ -104,28 +111,28 @@ class TimelineWidget(QWidget):
                 x = self.x_at(i*step)
                 painter.drawLine(int(x), int(y+height/2-amplitude), int(x), int(y+height/2+amplitude))
         else:
-            painter.setPen(QColor('#91a9bc'))
+            painter.setPen(QColor(self.colors['muted']))
             painter.drawText(QRectF(self.LABEL+12, 92, 650, 44), 'Load waveform to hear current narration and correct caption timing.')
         for block in self.blocks:
             rect = block['rect']
             if not rect.intersects(QRectF(event.rect())):
                 continue
             selected = self.selection == (block['kind'], block['index'])
-            painter.setPen(QPen(QColor('#b7f2dc' if selected else block['color']), 2 if selected else 1))
+            painter.setPen(QPen(QColor(self.colors['accent'] if selected else block['color']), 2 if selected else 1))
             painter.setBrush(QColor(block['color']))
             painter.drawRoundedRect(rect.adjusted(1, 1, -1, -1), 4, 4)
-            painter.setPen(QColor('#ffffff'))
+            painter.setPen(QColor(self.colors['track_text']))
             text = painter.fontMetrics().elidedText(block['text'], Qt.TextElideMode.ElideRight, max(0, int(rect.width()-12)))
             painter.drawText(rect.adjusted(6, 1, -4, -1), Qt.AlignmentFlag.AlignVCenter, text)
             if block['kind'] in ('scene', 'transition', 'caption'):
                 painter.drawLine(int(rect.right()-4), int(rect.top()+6), int(rect.right()-4), int(rect.bottom()-6))
                 if block['kind'] == 'caption':
                     painter.drawLine(int(rect.left()+4), int(rect.top()+6), int(rect.left()+4), int(rect.bottom()-6))
-        painter.setPen(QPen(QColor('#f6c473'), 2))
+        painter.setPen(QPen(QColor(self.colors['playhead']), 2))
         x = self.x_at(self.playhead)
         painter.drawLine(int(x), 25, int(x), 241)
         if self.drag:
-            painter.setPen(QColor('#f6c473'))
+            painter.setPen(QColor(self.colors['playhead']))
             painter.drawText(QRectF(x+5, 4, 170, 20), f'{self.playhead:.3f}s')
 
     def mousePressEvent(self, event):

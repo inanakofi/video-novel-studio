@@ -8,7 +8,7 @@ from PySide6.QtMultimedia import QMediaPlayer, QAudioOutput
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
     QSpinBox, QDoubleSpinBox, QScrollArea, QSplitter, QTableWidget, QTableWidgetItem,
     QHeaderView, QAbstractItemView, QTabWidget, QFormLayout, QLineEdit, QComboBox,
-    QListWidgetItem, QColorDialog)
+    QListWidgetItem, QColorDialog, QGridLayout)
 
 from .media import audio_duration, atomic_json
 from .render_cache import digest
@@ -20,6 +20,7 @@ from .timeline import prepare_waveform, edit_timeline
 from .timeline_widget import TimelineWidget
 from .publishing import publishing_check
 from .exports import export_source, export_changed
+from .ui_widgets import FormSection
 
 
 def action(text, callback):
@@ -90,7 +91,7 @@ class ProductionPanels:
         video_layout.addWidget(self.timeline_video_note)
         self.live_caption = QLabel('Current cue appears here while you listen.')
         self.live_caption.setWordWrap(True)
-        self.live_caption.setStyleSheet('color: #20735e; font-weight: 600;')
+        self.live_caption.setObjectName('liveCaption')
         video_layout.addWidget(self.live_caption)
         self._audition_scene = None
         area.addWidget(video_column)
@@ -447,18 +448,32 @@ class ProductionPanels:
         note = QLabel('Check assets, timing, narration pauses and mobile captions before publishing. Warnings are editorial guidance; safe margins are not a guarantee about platform overlays.')
         note.setWordWrap(True)
         layout.addWidget(note)
-        form = QFormLayout()
-        for key, label, value in (('publish_min_duration', 'Minimum duration (s)', 60),
+        self.publish_settings = FormSection('Check settings')
+        thresholds = QWidget()
+        grid = QGridLayout(thresholds)
+        grid.setContentsMargins(0, 0, 0, 0)
+        grid.setHorizontalSpacing(24)
+        for column, (key, label, value) in enumerate((('publish_min_duration', 'Minimum duration (s)', 60),
                                   ('publish_max_duration', 'Maximum duration (s)', 90),
-                                  ('pause_warning_seconds', 'Warn about narration pauses longer than (s)', 1.5)):
+                                  ('pause_warning_seconds', 'Warn about narration pauses longer than (s)', 1.5))):
             widget = QDoubleSpinBox()
             widget.setRange(.1, 10000)
             widget.setValue(value)
             self.settings_widgets[key] = widget
-            form.addRow(label, widget)
-        layout.addLayout(form)
+            heading = QLabel(label)
+            heading.setWordWrap(True)
+            heading.setBuddy(widget)
+            grid.addWidget(heading, 0, column)
+            grid.addWidget(widget, 1, column)
+            grid.setColumnStretch(column, 1)
+        self.publish_settings.form.addRow(thresholds)
+        layout.addWidget(self.publish_settings)
         self.publish_check_button = action('Run publishing check', self.run_publishing_check)
-        layout.addWidget(self.publish_check_button)
+        self.publish_check_button.setObjectName('primary')
+        actions = QHBoxLayout()
+        actions.addWidget(self.publish_check_button)
+        actions.addStretch()
+        layout.addLayout(actions)
         self.publish_summary = QLabel('No publishing check run for this episode yet.')
         self.publish_summary.setWordWrap(True)
         layout.addWidget(self.publish_summary)

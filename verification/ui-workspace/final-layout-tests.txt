@@ -1,0 +1,20 @@
+test_browsing_video_rows_uses_only_existing_thumbnail_cache (test_ui_workspace.WorkspaceDesktopTests.test_browsing_video_rows_uses_only_existing_thumbnail_cache) ... ok
+test_create_videos_stays_visible_when_setup_scrolls (test_ui_workspace.WorkspaceDesktopTests.test_create_videos_stays_visible_when_setup_scrolls) ... ok
+test_hidden_scene_fields_save_canonical_motion_and_caption_values (test_ui_workspace.WorkspaceDesktopTests.test_hidden_scene_fields_save_canonical_motion_and_caption_values) ... ok
+test_missing_visual_and_tool_configuration_open_relevant_groups (test_ui_workspace.WorkspaceDesktopTests.test_missing_visual_and_tool_configuration_open_relevant_groups) ... ok
+test_output_groups_keep_settings_when_collapsed (test_ui_workspace.WorkspaceDesktopTests.test_output_groups_keep_settings_when_collapsed) ... ok
+test_real_thumbnail_updates_when_an_asset_is_replaced (test_ui_workspace.WorkspaceDesktopTests.test_real_thumbnail_updates_when_an_asset_is_replaced) ... ok
+test_active_job_cancel_and_failure_details_remain_accessible (test_ui_theme.AppearanceDesktopTests.test_active_job_cancel_and_failure_details_remain_accessible) ... ok
+test_artwork_keeps_its_aspect_and_fits_when_details_expand (test_ui_theme.AppearanceDesktopTests.test_artwork_keeps_its_aspect_and_fits_when_details_expand) ... ok
+test_bad_appearance_state_falls_back_without_blocking_startup (test_ui_theme.AppearanceDesktopTests.test_bad_appearance_state_falls_back_without_blocking_startup) ... ok
+test_media_controls_follow_scene_type_and_keep_hidden_values (test_ui_theme.AppearanceDesktopTests.test_media_controls_follow_scene_type_and_keep_hidden_values) ... ok
+test_system_changes_follow_system_choice_and_respect_manual_choice (test_ui_theme.AppearanceDesktopTests.test_system_changes_follow_system_choice_and_respect_manual_choice) ... ok
+test_theme_choice_survives_reopen_without_discarding_edits (test_ui_theme.AppearanceDesktopTests.test_theme_choice_survives_reopen_without_discarding_edits) ... ok
+test_readable_text_controls_and_timeline_categories_in_both_themes (test_ui_theme.ThemeContrastTests.test_readable_text_controls_and_timeline_categories_in_both_themes) ... ok
+test_task_models_filters_shared_key_duplication_and_saved_choices (test_model_routing.ModelRoutingDesktopTests.test_task_models_filters_shared_key_duplication_and_saved_choices) ... ok
+test_attach_route_produce_and_open_generated_episode (test_production.ProductionDesktopTests.test_attach_route_produce_and_open_generated_episode) ... ok
+
+----------------------------------------------------------------------
+Ran 15 tests in 9.135s
+
+OK

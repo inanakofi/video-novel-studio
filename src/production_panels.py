@@ -6,7 +6,7 @@ from PySide6.QtCore import Qt, QUrl
 from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QFormLayout, QLabel, QPushButton,
                               QLineEdit, QComboBox, QSpinBox, QPlainTextEdit, QCheckBox, QFileDialog,
-                              QScrollArea, QListWidget, QListWidgetItem, QTabWidget)
+                              QScrollArea, QListWidget, QListWidgetItem, QTabWidget, QGridLayout)
 
 from .production.adapters import capability
 from .production.prompts import FORMATS, PROMPTS, VERSION
@@ -14,6 +14,7 @@ from .production.runner import ProductionRunner, ROLE_KINDS
 from .connections.models import filter_models
 from .model_widgets import model_picker, fill_models
 from .media import atomic_json
+from .ui_widgets import FormSection
 
 
 def action(text, callback):
@@ -38,7 +39,14 @@ class AutomationPanels:
         tabs = QTabWidget()
         layout.addWidget(tabs)
         setup = QWidget()
-        form = QFormLayout(setup)
+        setup_layout = QVBoxLayout(setup)
+        setup_layout.setSpacing(16)
+        self.production_sections = {}
+        for title in ('Manuscript', 'Video format', 'Task models'):
+            section = self.production_sections[title] = FormSection(title)
+            setup_layout.addWidget(section)
+        setup_layout.addStretch()
+        form = self.production_sections['Manuscript'].form
         source_row = QWidget()
         source_layout = QHBoxLayout(source_row)
         source_layout.setContentsMargins(0, 0, 0, 0)
@@ -50,6 +58,7 @@ class AutomationPanels:
         self.production_title = QLineEdit()
         self.production_title.setPlaceholderText('Name your series')
         form.addRow('Series title', self.production_title)
+        form = self.production_sections['Video format'].form
         self.production_format = QComboBox()
         for key, title in FORMATS.items():
             self.production_format.addItem(title, key)
@@ -70,6 +79,7 @@ class AutomationPanels:
         self.production_direction.setPlaceholderText('Optional: language, audience, visual style, tone, pronunciation…')
         self.production_direction.setMaximumHeight(85)
         form.addRow('Creative direction', self.production_direction)
+        form = self.production_sections['Task models'].form
         connections = QHBoxLayout()
         connections.addWidget(action('Refresh available connections', lambda: self._guard(self._refresh_production_routes)))
         connections.addWidget(action('Refresh model catalogs', lambda: self._guard(self._refresh_model_catalogs)))
@@ -87,19 +97,35 @@ class AutomationPanels:
         self.production_routes = {}
         self.production_models = {}
         self.production_model_counts = {}
+        model_choices = QWidget()
+        model_grid = QGridLayout(model_choices)
+        model_grid.setContentsMargins(0, 8, 0, 0)
+        model_grid.setHorizontalSpacing(12)
+        model_grid.setVerticalSpacing(8)
+        model_grid.setColumnStretch(1, 2)
+        model_grid.setColumnStretch(2, 3)
+        for column, title in enumerate(('Task', 'Connection', 'Model', 'Available')):
+            heading = QLabel(title)
+            heading.setObjectName('tableHeading')
+            model_grid.addWidget(heading, 0, column)
         labels = {'analysis': 'Analysis / planning', 'writing': 'Scripts', 'review': 'Quality review',
                   'image': 'Illustrations / references', 'video': 'Animated / cinematic clips', 'voice': 'Speech',
                   'lipsync': 'Lip-sync tool (optional)'}
-        for role, label in labels.items():
+        for row_index, (role, label) in enumerate(labels.items(), 1):
             picker = self.production_routes[role] = QComboBox()
             model = self.production_models[role] = model_picker()
-            row = QHBoxLayout()
-            row.addWidget(picker, 1)
-            row.addWidget(model, 1)
+            picker.setAccessibleName(label + ' connection')
+            model.setAccessibleName(label + ' model')
+            task_label = QLabel(label)
+            task_label.setBuddy(picker)
+            model_grid.addWidget(task_label, row_index, 0)
+            model_grid.addWidget(picker, row_index, 1)
+            model_grid.addWidget(model, row_index, 2)
             self.production_model_counts[role] = note('')
-            row.addWidget(self.production_model_counts[role])
+            self.production_model_counts[role].setObjectName('muted')
+            model_grid.addWidget(self.production_model_counts[role], row_index, 3)
             picker.currentIndexChanged.connect(lambda _, r=role: self._production_model_changed(r, reset=True))
-            form.addRow(label, row)
+        form.addRow(model_choices)
         self.production_voice_id = QLineEdit()
         self.production_voice_id.setPlaceholderText('Optional; blank uses the Speech connection voice')
         form.addRow('Speech voice ID', self.production_voice_id)
@@ -116,14 +142,22 @@ class AutomationPanels:
                          'Animated/cinematic clips need a video model; lip-sync uses a configured tool.'))
         self.production_start = action('Create videos', lambda: self._guard(self._start_production))
         self.production_start.setObjectName('primary')
-        form.addRow(self.production_start)
-        form.addRow(note('Starting sends manuscript sections and production context to the selected text models, and prompts to media models. '
+        consent = note('Starting sends manuscript sections and production context to the selected text models, and prompts to media models. '
                          'Connected tools may incur charges. Stop pauses the run; submitted provider jobs may continue. '
-                         'The call limit in Advanced bounds submissions, not their price.'))
+                         'The call limit in Advanced bounds submissions, not their price.')
+        consent.setObjectName('muted')
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         scroll.setWidget(setup)
-        tabs.addTab(scroll, 'Create videos')
+        create_page = QWidget()
+        create_layout = QVBoxLayout(create_page)
+        create_layout.setContentsMargins(0, 0, 0, 0)
+        create_layout.addWidget(scroll, 1)
+        create_footer = QHBoxLayout()
+        create_footer.addWidget(consent, 1)
+        create_footer.addWidget(self.production_start)
+        create_layout.addLayout(create_footer)
+        tabs.addTab(create_page, 'Create videos')
 
         advanced = QWidget()
         extra = QFormLayout(advanced)

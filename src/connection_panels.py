@@ -16,6 +16,7 @@ from .connections.generation import GenerationService, prompt_for, episode_from_
 from .connections.tools import call_http, mcp_action
 from .model_widgets import model_picker, fill_models
 from .media import atomic_json
+from .ui_widgets import FormSection
 from .scene_builder import save_episode
 from .story_manager import atomic_text
 
@@ -83,7 +84,14 @@ class ConnectionPanels:
         row.addWidget(self.add_connection_button)
         layout.addLayout(row)
         inner = QWidget()
-        form = QFormLayout(inner)
+        groups = QVBoxLayout(inner)
+        groups.setSpacing(16)
+        self.connection_sections = {}
+        for title, expanded in (('Provider', True), ('Model defaults', False),
+                                ('Credentials', True), ('Advanced options', False)):
+            section = self.connection_sections[title] = FormSection(title, expanded=expanded)
+            groups.addWidget(section)
+        form = self.connection_sections['Provider'].form
         self.connection_enabled = QCheckBox('Enable this connection')
         self.connection_name = QLineEdit()
         self.connection_url = QLineEdit()
@@ -114,14 +122,17 @@ class ConnectionPanels:
         form.addRow(self.connection_enabled)
         form.addRow('Name', self.connection_name)
         form.addRow('Base URL / MCP endpoint', self.connection_url)
+        form = self.connection_sections['Model defaults'].form
         form.addRow('Browse models', filters)
         form.addRow('Default model (optional)', self.connection_model)
         form.addRow('Default voice ID', self.connection_voice)
         form.addRow(note('Save one connection per API key. Choose models beside each task in Create videos or Generate. '
                          'Duplicate a connection to reuse its key with another default model, or enter a different key. '
                          'Ollama, ComfyUI and compatible local servers can serve open models.'))
+        form = self.connection_sections['Credentials'].form
         form.addRow('Credential environment', self.connection_env)
         form.addRow('Secure API key', self.connection_key)
+        form = self.connection_sections['Advanced options'].form
         form.addRow('Provider options', self.connection_options)
         form.addRow(note('ComfyUI: load an exported API-format workflow, then replace its prompt input with {{prompt}}. '
                          'MCP stdio: command, args and optional cwd. Only launch programs you trust; they have your OS permissions.'))
@@ -129,6 +140,7 @@ class ConnectionPanels:
         options_row.addWidget(action('Load ComfyUI workflow…', lambda: self._guard(self._load_comfy_workflow)))
         options_row.addWidget(action('Remove stored key', lambda: self._guard(self._remove_connection_key)))
         form.addRow(options_row)
+        groups.addStretch()
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         scroll.setWidget(inner)
@@ -299,6 +311,8 @@ class ConnectionPanels:
         self.selected_connection_id = key
         self.connection_key.clear()
         if conn:
+            if conn.provider in ('mcp_stdio', 'mcp_http', 'comfyui'):
+                self.connection_sections['Advanced options'].set_expanded(True)
             self.connection_name.setText(conn.name)
             self.connection_url.setText(conn.base_url)
             fill_models(self.connection_model, conn, self.generation_service.catalog,

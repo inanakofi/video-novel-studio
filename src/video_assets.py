@@ -17,15 +17,27 @@ def video_info(path):
             'has_audio': any(s.get('codec_type') == 'audio' for s in data['streams'])}
 
 
+def _thumbnail_path(episode, scene, source):
+    stat = source.stat()
+    key = hashlib.sha256(f'{source}|{stat.st_size}|{stat.st_mtime_ns}|{scene.video_start_seconds}'.encode()).hexdigest()
+    return episode.directory / '.vns-cache' / 'thumbnails' / (key + '.png')
+
+
+def cached_visual_preview(episode, scene):
+    """Scene lists never start FFmpeg just to populate video thumbnails."""
+    source = episode.resolve_asset(scene.visual_asset)
+    if scene.media_type != 'video' or not source.is_file():
+        return source
+    output = _thumbnail_path(episode, scene, source)
+    return output if output.is_file() else None
+
+
 def visual_preview(episode, scene):
     source = episode.resolve_asset(scene.visual_asset)
     if scene.media_type != 'video' or not source.is_file():
         return source
-    stat = source.stat()
-    key = hashlib.sha256(f'{source}|{stat.st_size}|{stat.st_mtime_ns}|{scene.video_start_seconds}'.encode()).hexdigest()
-    root = episode.directory / '.vns-cache' / 'thumbnails'
-    root.mkdir(parents=True, exist_ok=True)
-    output = root / (key + '.png')
+    output = _thumbnail_path(episode, scene, source)
+    output.parent.mkdir(parents=True, exist_ok=True)
     if not output.exists():
         ffmpeg(['-ss', str(scene.video_start_seconds), '-i', str(source), '-frames:v', '1',
                 '-vf', 'scale=360:640:force_original_aspect_ratio=decrease', '-threads', '2', str(output)])

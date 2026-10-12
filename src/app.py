@@ -9,8 +9,8 @@ import os
 from pathlib import Path
 import threading
 
-from PySide6.QtCore import Qt, QObject, QThread, Signal, QUrl, Slot
-from PySide6.QtGui import QFont, QPixmap, QDesktopServices
+from PySide6.QtCore import Qt, QObject, QThread, Signal, QUrl, Slot, QSize
+from PySide6.QtGui import QFont, QPixmap, QDesktopServices, QIcon
 from PySide6.QtMultimedia import QAudioOutput, QMediaPlayer, QVideoSink, QVideoFrame
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
@@ -18,7 +18,7 @@ from PySide6.QtWidgets import (
     QPlainTextEdit, QDoubleSpinBox, QSpinBox, QCheckBox, QTabWidget, QSplitter,
     QScrollArea, QFormLayout, QFileDialog, QInputDialog,
     QProgressBar, QTableWidget, QTableWidgetItem, QHeaderView, QSlider,
-    QStackedWidget, QFontComboBox, QAbstractItemView, QSizePolicy,
+    QStackedWidget, QFontComboBox, QAbstractItemView, QSizePolicy, QStyle,
 )
 
 from .audio_manager import installed_voices, synthesize_local, inspect_narration
@@ -33,37 +33,13 @@ from .studio_panels import ProductionPanels
 from .connection_panels import ConnectionPanels
 from .production_panels import AutomationPanels
 from .exports import export_changed
+from .theme import palette_for, stylesheet_for
+from .ui_widgets import FormSection, MOTION_LABELS, TRANSITION_LABELS, ThumbnailCache, SceneListDelegate
+from .video_assets import cached_visual_preview
 
 
-STYLE = '''
-QMainWindow, QWidget { background: #f3f5f7; color: #263346; font-family: "Segoe UI"; font-size: 13px; }
-QWidget#sidebar { background: #142234; color: #dce7ee; }
-QWidget#sidebar QLabel { color: #c9d7e2; background: transparent; }
-QWidget#sidebar QListWidget { background: #1a2c40; color: #dce7ee; border: 0; }
-QWidget#sidebar QListWidget::item:selected { background: #28584f; color: #ffffff; }
-QLabel#brand { font-size: 22px; font-weight: 700; color: #ffffff; }
-QLabel#heading { font-size: 24px; font-weight: 650; }
-QLabel#muted { color: #65758a; }
-QLabel#preview { background: #111b2d; color: #b6c6d4; border-radius: 8px; }
-QLabel#warning { color: #9b512b; }
-QPushButton { background: #ffffff; border: 1px solid #d4dce3; padding: 8px 12px; border-radius: 6px; }
-QPushButton:hover { background: #e4f1ec; border-color: #60b69c; }
-QPushButton:disabled { color: #9aa5ae; background: #edf0f2; }
-QPushButton#primary { background: #20735e; color: white; border: 1px solid #20735e; font-weight: 600; }
-QPushButton#primary:hover { background: #195d4c; }
-QLineEdit, QPlainTextEdit, QComboBox, QDoubleSpinBox, QSpinBox, QFontComboBox {
- background: #ffffff; border: 1px solid #d4dce3; border-radius: 5px; padding: 6px; selection-background-color: #20735e; }
-QTabWidget::pane { background: #ffffff; border: 1px solid #dce2e7; border-radius: 6px; }
-QTabBar::tab { padding: 10px 15px; margin-right: 3px; color: #52647a; }
-QTabBar::tab:selected { background: #ffffff; color: #20735e; border-bottom: 3px solid #20735e; }
-QListWidget, QTableWidget { background: #ffffff; border: 1px solid #dce2e7; border-radius: 6px; }
-QListWidget::item { padding: 12px 8px; border-bottom: 1px solid #e8edf0; }
-QListWidget::item:selected { background: #dceee7; color: #174c3e; }
-QHeaderView::section { background: #eaf0f3; color: #52647a; border: 0; padding: 8px; }
-QProgressBar { border: 0; background: #e0e7eb; border-radius: 5px; min-height: 10px; text-align: center; }
-QProgressBar::chunk { background: #298d73; border-radius: 5px; }
-QScrollArea { border: 0; }
-'''
+# Kept as the public default for integrations that import the studio stylesheet.
+STYLE = stylesheet_for('light')
 
 
 class Task(QObject):
@@ -87,13 +63,34 @@ class Task(QObject):
             self.finished.emit()
 
 
+class ArtworkPreview(QLabel):
+    """Keep the complete scene image visible when panes or job details resize."""
+    def __init__(self, text=''):
+        super().__init__(text)
+        self._source_pixmap = QPixmap()
+
+    def setPixmap(self, pixmap):
+        self._source_pixmap = pixmap
+        self._fit_image()
+
+    def _fit_image(self):
+        super().setPixmap(self._source_pixmap.scaled(self.size(), Qt.AspectRatioMode.KeepAspectRatio,
+                                                   Qt.TransformationMode.SmoothTransformation)
+                          if not self._source_pixmap.isNull() else QPixmap())
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        if not self._source_pixmap.isNull():
+            self._fit_image()
+
+
 class VideoPreview(QLabel):
     """Display the player's real decoded frames, including in desktop captures."""
     def __init__(self):
         super().__init__()
         self.setObjectName('preview')
         self.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.setMinimumSize(230, 390)
+        self.setMinimumSize(230, 320)
         self.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Expanding)
         self.sink = QVideoSink(self)
         self.last_image = None
@@ -108,7 +105,16 @@ class VideoPreview(QLabel):
             image = frame.toImage()
             if not image.isNull():
                 self.last_image = image
-                self.setPixmap(QPixmap.fromImage(image).scaled(self.size(), Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation))
+                self._fit_frame()
+
+    def _fit_frame(self):
+        if self.last_image is not None:
+            self.setPixmap(QPixmap.fromImage(self.last_image).scaled(self.size(), Qt.AspectRatioMode.KeepAspectRatio,
+                                                                   Qt.TransformationMode.SmoothTransformation))
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        self._fit_frame()
 
 
 def button(text, action=None, primary=False):
@@ -144,6 +150,7 @@ class StudioWindow(ProductionPanels, ConnectionPanels, AutomationPanels, QMainWi
         self.last_error = ''
         self.last_report = None
         self.captions_dirty = False
+        self._thumbnail_cache = ThumbnailCache()
         self.state_path = self.library.root / '.studio_state.json'
         self.state = {}
         if self.state_path.is_file():
@@ -151,32 +158,40 @@ class StudioWindow(ProductionPanels, ConnectionPanels, AutomationPanels, QMainWi
                 state = json.loads(self.state_path.read_text(encoding='utf-8'))
                 if isinstance(state, dict):
                     self.state = {key: value for key, value in state.items()
-                                  if key in ('story', 'episode') and isinstance(value, str)}
+                                  if key in ('story', 'episode', 'theme') and isinstance(value, str)}
             except (ValueError, OSError):
                 pass
         self.setWindowTitle('Video Novel Studio')
         self.resize(1440, 940)
         self.setMinimumSize(1140, 760)
-        self.setStyleSheet(STYLE)
+        self.theme_preference = self.state.get('theme', 'system')
+        if self.theme_preference not in ('system', 'light', 'dark'):
+            self.theme_preference = 'system'
+        self._style_hints = QApplication.instance().styleHints()
         self.voices = installed_voices()
         self._build()
+        self._apply_theme()
+        self._style_hints.colorSchemeChanged.connect(self._system_theme_changed)
         self.refresh_library()
 
     def _build(self):
         root = QWidget()
+        root.setObjectName('shell')
         self.setCentralWidget(root)
         outer = QHBoxLayout(root)
         outer.setContentsMargins(0, 0, 0, 0)
         outer.setSpacing(0)
         self.sidebar = QWidget()
         self.sidebar.setObjectName('sidebar')
-        self.sidebar.setFixedWidth(235)
+        self.sidebar.setFixedWidth(220)
         side = QVBoxLayout(self.sidebar)
         side.setContentsMargins(18, 24, 18, 20)
         brand = QLabel('Video Novel\nStudio')
         brand.setObjectName('brand')
         side.addWidget(brand)
-        side.addWidget(QLabel('LOCAL STORIES. REAL VIDEOS.'))
+        tagline = QLabel('LOCAL STORIES. REAL VIDEOS.')
+        tagline.setObjectName('muted')
+        side.addWidget(tagline)
         side.addSpacing(22)
         side.addWidget(QLabel('STORY LIBRARY'))
         self.story_combo = QComboBox()
@@ -187,19 +202,36 @@ class StudioWindow(ProductionPanels, ConnectionPanels, AutomationPanels, QMainWi
         side.addSpacing(14)
         side.addWidget(QLabel('EPISODES'))
         self.episode_list = QListWidget()
+        self.episode_list.setTextElideMode(Qt.TextElideMode.ElideRight)
+        self.episode_list.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.episode_list.currentRowChanged.connect(self._episode_changed)
         side.addWidget(self.episode_list, 1)
         self.new_episode_button = button('+ New episode', self.new_episode)
         side.addWidget(self.new_episode_button)
         side.addSpacing(10)
-        side.addWidget(button('Open workspace', lambda: QDesktopServices.openUrl(QUrl.fromLocalFile(str(self.library.root)))))
+        workspace_button = button('Open workspace', lambda: QDesktopServices.openUrl(QUrl.fromLocalFile(str(self.library.root))))
+        workspace_button.setProperty('variant', 'quiet')
+        side.addWidget(workspace_button)
+        appearance = QHBoxLayout()
+        appearance.addWidget(QLabel('Appearance'))
+        self.theme_combo = QComboBox()
+        for title, value in (('System', 'system'), ('Light', 'light'), ('Dark', 'dark')):
+            self.theme_combo.addItem(title, value)
+        self.theme_combo.setCurrentIndex(self.theme_combo.findData(self.theme_preference))
+        self.theme_combo.setAccessibleName('Appearance theme')
+        self.theme_combo.setToolTip('Follow the system appearance or choose a light or dark studio.')
+        self.theme_combo.currentIndexChanged.connect(self._theme_selected)
+        appearance.addWidget(self.theme_combo, 1)
+        side.addLayout(appearance)
         offline = QLabel('Offline by design\nImages + voice + FFmpeg')
         offline.setWordWrap(True)
+        offline.setObjectName('muted')
         side.addWidget(offline)
         outer.addWidget(self.sidebar)
 
         main = QVBoxLayout()
-        main.setContentsMargins(24, 22, 24, 18)
+        main.setContentsMargins(24, 22, 24, 16)
+        main.setSpacing(12)
         header = QHBoxLayout()
         text_column = QVBoxLayout()
         self.heading = QLabel('Your next story starts here')
@@ -211,11 +243,16 @@ class StudioWindow(ProductionPanels, ConnectionPanels, AutomationPanels, QMainWi
         header.addLayout(text_column, 1)
         self.save_button = button('Save project', self.save_all)
         self.check_button = button('Check assets', self.check_assets)
+        self.check_button.setProperty('variant', 'quiet')
         header.addWidget(self.save_button)
         header.addWidget(self.check_button)
         main.addLayout(header)
         main.addSpacing(12)
         self.tabs = QTabWidget()
+        self.tabs.setDocumentMode(True)
+        self.tabs.tabBar().setExpanding(False)
+        self.tabs.tabBar().setUsesScrollButtons(True)
+        self.tabs.tabBar().setElideMode(Qt.TextElideMode.ElideNone)
         self.tabs.addTab(self._scene_tab(), 'Scenes / preview')
         self.tabs.addTab(self._writing_tab(), 'Writing')
         self.tabs.addTab(self._bible_tab(), 'Story bibles')
@@ -227,30 +264,84 @@ class StudioWindow(ProductionPanels, ConnectionPanels, AutomationPanels, QMainWi
         self.tabs.addTab(self._connections_tab(), 'Connections / AI')
         self.tabs.addTab(self._automation_tab(), 'Manuscript → videos')
         main.addWidget(self.tabs, 1)
+        job_bar = QWidget()
+        job_bar.setObjectName('jobBar')
+        job_layout = QVBoxLayout(job_bar)
+        job_layout.setContentsMargins(12, 10, 12, 10)
+        job_layout.setSpacing(6)
         footer = QHBoxLayout()
         self.preview_button = button('Render preview · 360p', lambda: self.start_render(preview=True))
         self.render_button = button('Render MP4', lambda: self.start_render(), True)
         self.batch_button = button('Render story batch', self.start_batch)
+        self.batch_button.setProperty('variant', 'quiet')
         self.cancel_button = button('Cancel job', self.cancel_job)
         self.cancel_button.setEnabled(False)
+        self.cancel_button.setVisible(False)
         for widget in (self.preview_button, self.render_button, self.batch_button):
             footer.addWidget(widget)
         footer.addStretch()
         footer.addWidget(self.cancel_button)
-        main.addLayout(footer)
+        job_layout.addLayout(footer)
         self.progress_bar = QProgressBar()
         self.progress_bar.setValue(0)
-        main.addWidget(self.progress_bar)
+        self.progress_bar.setTextVisible(False)
+        self.progress_bar.setVisible(False)
+        job_layout.addWidget(self.progress_bar)
+        status_row = QHBoxLayout()
         self.status = QLabel('Ready · all work stays on this computer')
         self.status.setWordWrap(True)
-        self.status.setObjectName('muted')
-        main.addWidget(self.status)
+        self.status.setObjectName('status')
+        status_row.addWidget(self.status, 1)
+        self.progress_label = QLabel('0%')
+        self.progress_label.setObjectName('muted')
+        self.progress_label.setVisible(False)
+        status_row.addWidget(self.progress_label)
+        self.details_button = button('Details')
+        self.details_button.setProperty('variant', 'quiet')
+        self.details_button.setCheckable(True)
+        self.details_button.setAccessibleName('Show job details')
+        status_row.addWidget(self.details_button)
+        job_layout.addLayout(status_row)
         self.log = QPlainTextEdit()
         self.log.setReadOnly(True)
-        self.log.setMaximumHeight(80)
+        self.log.setMaximumHeight(100)
         self.log.setPlaceholderText('Render and validation details appear here.')
-        main.addWidget(self.log)
+        self.log.setVisible(False)
+        self.details_button.toggled.connect(self.log.setVisible)
+        job_layout.addWidget(self.log)
+        main.addWidget(job_bar)
+        self.tabs.currentChanged.connect(self._update_render_priority)
         outer.addLayout(main, 1)
+
+    def _apply_theme(self):
+        if self.theme_preference == 'system':
+            self.current_theme = 'dark' if self._style_hints.colorScheme() == Qt.ColorScheme.Dark else 'light'
+        else:
+            self.current_theme = self.theme_preference
+        palette = palette_for(self.current_theme)
+        # Native dialogs and completer popups also need the current palette.
+        QApplication.instance().setPalette(palette)
+        self.setPalette(palette)
+        self.setStyleSheet(stylesheet_for(self.current_theme))
+        self.timeline.set_theme(self.current_theme)
+        for section in self.findChildren(FormSection):
+            section.set_theme(self.current_theme)
+
+    def _system_theme_changed(self, scheme):
+        if self.theme_preference == 'system':
+            self._apply_theme()
+
+    def _theme_selected(self, index):
+        self.theme_preference = self.theme_combo.itemData(index)
+        self.state['theme'] = self.theme_preference
+        self._apply_theme()
+        self._guard(lambda: atomic_json(self.state_path, self.state))
+
+    def _update_render_priority(self, index):
+        self.render_button.setObjectName('' if index in (7, 8, 9) else 'primary')
+        self.render_button.style().unpolish(self.render_button)
+        self.render_button.style().polish(self.render_button)
+        self.render_button.update()
 
     def _scene_tab(self):
         tab = QWidget()
@@ -259,8 +350,14 @@ class StudioWindow(ProductionPanels, ConnectionPanels, AutomationPanels, QMainWi
         scene_column = QWidget()
         column = QVBoxLayout(scene_column)
         column.setContentsMargins(0, 6, 4, 0)
-        column.addWidget(QLabel('SCENE TIMELINE'))
+        scene_heading = QLabel('SCENE TIMELINE')
+        scene_heading.setObjectName('sectionHeading')
+        column.addWidget(scene_heading)
         self.scene_list = QListWidget()
+        self.scene_list.setIconSize(QSize(44, 68))
+        self.scene_list.setItemDelegate(SceneListDelegate(self.scene_list))
+        self.scene_list.setTextElideMode(Qt.TextElideMode.ElideRight)
+        self.scene_list.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.scene_list.currentRowChanged.connect(self._scene_changed)
         column.addWidget(self.scene_list, 1)
         self.add_scene_button = button('+ Add scene', self.add_scene)
@@ -269,14 +366,24 @@ class StudioWindow(ProductionPanels, ConnectionPanels, AutomationPanels, QMainWi
         self.up_button = button('↑', lambda: self.move_scene(-1))
         self.down_button = button('↓', lambda: self.move_scene(1))
         self.remove_scene_button = button('Remove', self.remove_scene)
+        self.remove_scene_button.setProperty('variant', 'danger')
         for widget in (self.up_button, self.down_button, self.remove_scene_button):
             row.addWidget(widget)
         column.addLayout(row)
         splitter.addWidget(scene_column)
 
         editor = QWidget()
-        form = QFormLayout(editor)
-        form.setContentsMargins(10, 8, 14, 8)
+        inspector = QVBoxLayout(editor)
+        inspector.setContentsMargins(10, 0, 14, 8)
+        inspector.setSpacing(12)
+        self.scene_sections = {}
+        for title, expanded in (('Visual', False), ('Narration', True), ('Timing', False),
+                                ('Captions', False), ('Continuity', False)):
+            section = self.scene_sections[title] = FormSection(title, expanded=expanded, stacked=True)
+            inspector.addWidget(section)
+        inspector.addStretch()
+        form = self.scene_sections['Visual'].form
+        self.scene_form = form
         self.visual_path = QLineEdit()
         self.visual_path.setPlaceholderText('Choose a local image or video')
         image_row = QHBoxLayout()
@@ -293,17 +400,19 @@ class StudioWindow(ProductionPanels, ConnectionPanels, AutomationPanels, QMainWi
         self.video_volume_spin.setSingleStep(.05)
         form.addRow('Video trim start (s)', self.video_start_spin)
         form.addRow('Video sound (0 = mute)', self.video_volume_spin)
-        form.addRow(button('Fit scene to remaining video', lambda: self._guard(self._fit_video)))
+        self.fit_video_button = button('Fit scene to remaining video', lambda: self._guard(self._fit_video))
+        form.addRow(self.fit_video_button)
         self.asset_status = QLabel('Choose an image and narration recording.')
         self.asset_status.setWordWrap(True)
         self.asset_status.setObjectName('warning')
         form.addRow(self.asset_status)
         shared = button('Use shared character / background…', self.use_shared_image)
         form.addRow(shared)
+        form = self.scene_sections['Narration'].form
         self.narration_text = QPlainTextEdit()
         self.narration_text.setPlaceholderText('The spoken narration for this scene…')
         self.narration_text.setMinimumHeight(115)
-        self.narration_text.setMaximumHeight(180)
+        self.narration_text.setMaximumHeight(140)
         form.addRow('Narration', self.narration_text)
         self.audio_path = QLineEdit()
         self.audio_path.setPlaceholderText('Uses episode recording when empty')
@@ -316,6 +425,11 @@ class StudioWindow(ProductionPanels, ConnectionPanels, AutomationPanels, QMainWi
         audio_row.addWidget(self.import_audio_button)
         audio_row.addWidget(self.tts_button)
         form.addRow(audio_row)
+        hint = QLabel('Text edits do not change a recording. Re-record or create a local voice after revising narration.')
+        hint.setWordWrap(True)
+        hint.setObjectName('muted')
+        form.addRow(hint)
+        form = self.scene_sections['Timing'].form
         timing = QHBoxLayout()
         self.duration_spin = double_spin(1 / 60, 3600, 6)
         self.duration_spin.setSingleStep(1 / 30)
@@ -325,22 +439,26 @@ class StudioWindow(ProductionPanels, ConnectionPanels, AutomationPanels, QMainWi
         timing.addWidget(self.fit_button)
         form.addRow('Scene duration', timing)
         self.motion_combo = QComboBox()
-        self.motion_combo.addItems(['static', 'slow_zoom_in', 'slow_zoom_out', 'pan_left', 'pan_right', 'parallax'])
+        for value, label in MOTION_LABELS.items():
+            self.motion_combo.addItem(label, value)
         form.addRow('Camera motion', self.motion_combo)
         transitions = QHBoxLayout()
         self.transition_combo = QComboBox()
-        self.transition_combo.addItems(['cut', 'crossfade', 'fade_black'])
+        for value, label in TRANSITION_LABELS.items():
+            self.transition_combo.addItem(label, value)
         self.transition_duration = double_spin(.033, 3, .5)
         self.transition_duration.setSuffix(' s')
         transitions.addWidget(self.transition_combo)
         transitions.addWidget(self.transition_duration)
         form.addRow('Transition in', transitions)
         foreground = QHBoxLayout()
+        self.foreground_row = foreground
         self.foreground_path = QLineEdit()
         self.foreground_path.setPlaceholderText('Optional transparent PNG for parallax')
         foreground.addWidget(self.foreground_path)
         foreground.addWidget(button('Layer…', self.import_foreground))
         form.addRow('Foreground', foreground)
+        form = self.scene_sections['Captions'].form
         self.caption_default = QCheckBox('Use narration text for captions')
         self.caption_default.setChecked(True)
         form.addRow(self.caption_default)
@@ -352,15 +470,12 @@ class StudioWindow(ProductionPanels, ConnectionPanels, AutomationPanels, QMainWi
         self.style_combo = QComboBox()
         self.style_combo.addItems(['cinematic', 'standard'])
         form.addRow('Caption preset', self.style_combo)
+        form = self.scene_sections['Continuity'].form
         self.scene_characters = QListWidget()
         self.scene_characters.setMaximumHeight(100)
         form.addRow('Linked characters', self.scene_characters)
         self.scene_location = QComboBox()
         form.addRow('Linked location', self.scene_location)
-        hint = QLabel('Text edits do not change a recording. Re-record or create a local voice after revising narration.')
-        hint.setWordWrap(True)
-        hint.setObjectName('muted')
-        form.addRow(hint)
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         scroll.setWidget(editor)
@@ -368,12 +483,14 @@ class StudioWindow(ProductionPanels, ConnectionPanels, AutomationPanels, QMainWi
 
         preview_column = QWidget()
         preview = QVBoxLayout(preview_column)
-        preview.addWidget(QLabel('EPISODE PREVIEW'))
+        preview_heading = QLabel('EPISODE PREVIEW')
+        preview_heading.setObjectName('sectionHeading')
+        preview.addWidget(preview_heading)
         self.preview_stack = QStackedWidget()
-        self.image_preview = QLabel('Select a scene\nto preview its artwork')
+        self.image_preview = ArtworkPreview('Select a scene\nto preview its artwork')
         self.image_preview.setObjectName('preview')
         self.image_preview.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.image_preview.setMinimumSize(230, 390)
+        self.image_preview.setMinimumSize(230, 320)
         self.image_preview.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Expanding)
         self.preview_stack.addWidget(self.image_preview)
         self.video_widget = VideoPreview()
@@ -400,8 +517,14 @@ class StudioWindow(ProductionPanels, ConnectionPanels, AutomationPanels, QMainWi
         controls.addWidget(button('Scene still', self.show_still))
         preview.addLayout(controls)
         splitter.addWidget(preview_column)
-        splitter.setSizes([205, 430, 280])
+        splitter.setChildrenCollapsible(False)
+        splitter.setHandleWidth(5)
+        splitter.setSizes([185, 420, 330])
+        splitter.setStretchFactor(0, 0)
+        splitter.setStretchFactor(1, 2)
+        splitter.setStretchFactor(2, 3)
         layout.addWidget(splitter)
+        self._media_type_changed(self.media_type_combo.currentText())
         return tab
 
     def _writing_tab(self):
@@ -455,7 +578,13 @@ class StudioWindow(ProductionPanels, ConnectionPanels, AutomationPanels, QMainWi
         scroll.setWidgetResizable(True)
         content = QWidget()
         layout = QVBoxLayout(content)
-        form = QFormLayout()
+        layout.setSpacing(16)
+        self.output_sections = {}
+        for title, expanded in (('Episode timing', True), ('Output', True), ('Narration', True),
+                                ('Music', False), ('Captions', False), ('Sound effects', False)):
+            section = self.output_sections[title] = FormSection(title, expanded=expanded)
+            layout.addWidget(section)
+        form = self.output_sections['Episode timing'].form
         self.settings_widgets = {}
         for key, label, minimum, maximum, value in (
             ('target_duration', 'Target length (seconds)', 1, 3600, 75),
@@ -477,12 +606,14 @@ class StudioWindow(ProductionPanels, ConnectionPanels, AutomationPanels, QMainWi
         form.addRow('Title card duration', self.settings_widgets['title_duration'])
         form.addRow('End card text (optional)', self.settings_widgets['end_card'])
         form.addRow('End card duration', self.settings_widgets['end_duration'])
+        form = self.output_sections['Output'].form
         self.resolution_combo = QComboBox()
         self.resolution_combo.addItems(['1080 × 1920', '720 × 1280', '360 × 640'])
         form.addRow('MP4 resolution', self.resolution_combo)
         self.fps_combo = QComboBox()
         self.fps_combo.addItems(['30', '24', '60'])
         form.addRow('Frames per second', self.fps_combo)
+        form = self.output_sections['Narration'].form
         self.episode_audio_path = QLineEdit()
         row = QHBoxLayout()
         row.addWidget(self.episode_audio_path)
@@ -496,6 +627,7 @@ class StudioWindow(ProductionPanels, ConnectionPanels, AutomationPanels, QMainWi
         self.voice_rate.setRange(-10, 10)
         self.voice_rate.setValue(-1)
         form.addRow('Local voice speed (−10 to 10)', self.voice_rate)
+        form = self.output_sections['Music'].form
         self.music_path = QLineEdit()
         row = QHBoxLayout()
         row.addWidget(self.music_path)
@@ -506,6 +638,7 @@ class StudioWindow(ProductionPanels, ConnectionPanels, AutomationPanels, QMainWi
         self.duck_music = QCheckBox('Lower music automatically while narration plays')
         self.duck_music.setChecked(True)
         form.addRow(self.duck_music)
+        form = self.output_sections['Captions'].form
         self.caption_font = QFontComboBox()
         form.addRow('Caption font', self.caption_font)
         for key, label, minimum, maximum, value in (
@@ -523,18 +656,19 @@ class StudioWindow(ProductionPanels, ConnectionPanels, AutomationPanels, QMainWi
             widget.setValue(value)
             self.settings_widgets[key] = widget
             form.addRow(label, widget)
-        layout.addLayout(form)
-        layout.addWidget(QLabel('SOUND EFFECTS · start times include the title card'))
+        form = self.output_sections['Sound effects'].form
+        form.addRow(QLabel('Start times include the title card.'))
         self.effects_table = QTableWidget(0, 3)
         self.effects_table.setHorizontalHeaderLabels(['Asset', 'Start (s)', 'Volume (0–1)'])
         self.effects_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
         self.effects_table.setMinimumHeight(150)
-        layout.addWidget(self.effects_table)
+        form.addRow(self.effects_table)
         row = QHBoxLayout()
         row.addWidget(button('+ Import sound effect…', self.import_effect))
         row.addWidget(button('Remove effect', lambda: self.effects_table.removeRow(self.effects_table.currentRow()) if self.effects_table.currentRow() >= 0 else None))
         row.addStretch()
-        layout.addLayout(row)
+        form.addRow(row)
+        layout.addStretch()
         scroll.setWidget(content)
         return scroll
 
@@ -558,13 +692,18 @@ class StudioWindow(ProductionPanels, ConnectionPanels, AutomationPanels, QMainWi
         layout.addLayout(row)
         return tab
 
-    def _set_status(self, message):
+    def _set_status(self, message, *, error=False):
         self.status.setText(str(message))
+        self.status.setProperty('tone', 'error' if error else 'normal')
+        self.status.style().unpolish(self.status)
+        self.status.style().polish(self.status)
+        self.status.update()
 
     def _error(self, error):
         self.last_error = str(error).strip() or (type(error).__name__ if isinstance(error, BaseException) else 'Operation failed.')
-        self._set_status(self.last_error.splitlines()[0])
+        self._set_status(self.last_error.splitlines()[0], error=True)
         self.log.appendPlainText(self.last_error)
+        self.details_button.setChecked(True)
 
     def _guard(self, function):
         try:
@@ -746,11 +885,24 @@ class StudioWindow(ProductionPanels, ConnectionPanels, AutomationPanels, QMainWi
             for timed in self.episode.timeline():
                 scene = timed.scene
                 ready = self.episode.resolve_asset(scene.visual_asset).is_file()
-                label = f'{scene.scene_id:02}   {scene.narration[:35] or "Untitled scene"}\n{timed.start_seconds:.1f}–{timed.end_seconds:.1f}s  ·  {scene.media_type.title()} {"ready" if ready else "missing"}'
-                self.scene_list.addItem(label)
+                title = f'Scene {scene.scene_id:02}'
+                excerpt = ' '.join(scene.narration.split()) or 'Untitled scene'
+                metadata = f'{scene.duration_seconds:.1f}s · {scene.media_type.title()} {"present" if ready else "missing"}'
+                item = QListWidgetItem(f'{title}\n{excerpt}\n{metadata}')
+                item.setData(Qt.ItemDataRole.UserRole, {'title': title, 'excerpt': excerpt, 'metadata': metadata})
+                item.setToolTip(f'{title}\n{scene.visual_asset}\n{timed.start_seconds:.1f}-{timed.end_seconds:.1f}s\n{excerpt}')
+                item.setIcon(self._scene_icon(scene))
+                self.scene_list.addItem(item)
             selected = select if select is not None else self.scene_index
             self.scene_list.setCurrentRow(max(0, min(selected, len(self.episode.scenes)-1)))
         self.scene_list.blockSignals(False)
+
+    def _scene_icon(self, scene):
+        try:
+            pixmap = self._thumbnail_cache.get(cached_visual_preview(self.episode, scene))
+        except OSError:
+            pixmap = QPixmap()
+        return QIcon(pixmap) if not pixmap.isNull() else self.scene_list.style().standardIcon(QStyle.StandardPixmap.SP_FileIcon)
 
     def _scene_changed(self, row):
         if self._loading or not self.episode or row < 0:
@@ -771,8 +923,8 @@ class StudioWindow(ProductionPanels, ConnectionPanels, AutomationPanels, QMainWi
         self.narration_text.setPlainText(scene.narration)
         self.audio_path.setText(scene.narration_audio or '')
         self.duration_spin.setValue(scene.duration_seconds)
-        self.motion_combo.setCurrentText(scene.camera_motion)
-        self.transition_combo.setCurrentText(scene.transition)
+        self.motion_combo.setCurrentIndex(self.motion_combo.findData(scene.camera_motion))
+        self.transition_combo.setCurrentIndex(self.transition_combo.findData(scene.transition))
         self.transition_duration.setValue(scene.transition_seconds)
         self.foreground_path.setText(scene.foreground_asset or '')
         self.caption_default.setChecked(scene.subtitle is None)
@@ -782,11 +934,15 @@ class StudioWindow(ProductionPanels, ConnectionPanels, AutomationPanels, QMainWi
         missing = []
         if not self.episode.resolve_asset(scene.visual_asset).is_file():
             missing.append('Image missing')
+            self.scene_sections['Visual'].set_expanded(True)
         audio = scene.narration_audio or self.episode.settings.get('narration_asset', 'narration.wav')
         if scene.narration and not self.episode.resolve_asset(audio).is_file():
             missing.append('Narration missing')
         self.asset_status.setText(' · '.join(missing) if missing else 'Files present · use Check assets to validate timing and formats')
-        self.asset_status.setStyleSheet('color: #9b512b;' if missing else 'color: #20735e;')
+        self.asset_status.setObjectName('')
+        self.asset_status.setProperty('tone', 'warning' if missing else 'success')
+        self.asset_status.style().unpolish(self.asset_status)
+        self.asset_status.style().polish(self.asset_status)
         self.show_still()
 
     def _commit_scene(self):
@@ -798,7 +954,7 @@ class StudioWindow(ProductionPanels, ConnectionPanels, AutomationPanels, QMainWi
         scenes[self.scene_index] = replace(scenes[self.scene_index],
             duration_seconds=duration, visual_asset=self.visual_path.text().strip() or 'assets/scene.png',
             narration=self.narration_text.toPlainText(), narration_audio=self.audio_path.text().strip() or None,
-            camera_motion=self.motion_combo.currentText(), transition=self.transition_combo.currentText(),
+            camera_motion=self.motion_combo.currentData(), transition=self.transition_combo.currentData(),
             transition_seconds=self.transition_duration.value(), foreground_asset=self.foreground_path.text().strip() or None,
             subtitle=None if self.caption_default.isChecked() else self.caption_text.toPlainText(),
             subtitle_style=self.style_combo.currentText(),
@@ -937,8 +1093,14 @@ class StudioWindow(ProductionPanels, ConnectionPanels, AutomationPanels, QMainWi
 
     def _media_type_changed(self, value):
         # Called after construction, when the user changes the media selector.
+        for widget in (self.video_start_spin, self.video_volume_spin, self.fit_video_button):
+            self.scene_form.setRowVisible(widget, value == 'video')
+        if hasattr(self, 'motion_combo'):
+            timing = self.scene_sections['Timing'].form
+            timing.setRowVisible(self.motion_combo, value != 'video')
+            timing.setRowVisible(self.foreground_row, value != 'video')
         if value == 'video' and hasattr(self, 'motion_combo'):
-            self.motion_combo.setCurrentText('static')
+            self.motion_combo.setCurrentIndex(self.motion_combo.findData('static'))
             self.foreground_path.clear()
 
     def use_shared_image(self):
@@ -1171,6 +1333,7 @@ class StudioWindow(ProductionPanels, ConnectionPanels, AutomationPanels, QMainWi
         self.last_error = ''
         self.last_report = None
         self.progress_bar.setValue(0)
+        self.progress_label.setText('0%')
         self._set_busy(True)
         self._thread = QThread(self)
         self._worker = Task(function, self._cancel)
@@ -1190,10 +1353,14 @@ class StudioWindow(ProductionPanels, ConnectionPanels, AutomationPanels, QMainWi
         for widget in (self.save_button, self.check_button, self.preview_button, self.render_button, self.batch_button):
             widget.setEnabled(not busy)
         self.cancel_button.setEnabled(busy)
+        self.cancel_button.setVisible(busy)
+        self.progress_bar.setVisible(busy)
+        self.progress_label.setVisible(busy)
 
     @Slot(float, str)
     def _task_progress(self, fraction, message):
         self.progress_bar.setValue(round(fraction * 100))
+        self.progress_label.setText(f'{self.progress_bar.value()}%')
         self._set_status(message)
 
     @Slot(object)
@@ -1286,7 +1453,10 @@ class StudioWindow(ProductionPanels, ConnectionPanels, AutomationPanels, QMainWi
             self.image_preview.setPixmap(QPixmap())
             self.image_preview.setText('Visual missing or unreadable\n\nUse Browse to add an image or video')
         else:
-            self.image_preview.setPixmap(pixmap.scaled(self.image_preview.size(), Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation))
+            self.image_preview.setPixmap(pixmap)
+            item = self.scene_list.item(self.scene_index)
+            if item is not None:
+                item.setIcon(self._scene_icon(scene))
         self.preview_label.setText('Scene artwork · render a preview for motion, voice and captions')
 
     def play_export(self, path: Path):
@@ -1356,11 +1526,6 @@ class StudioWindow(ProductionPanels, ConnectionPanels, AutomationPanels, QMainWi
         self.narration_player.setSource(QUrl())
         event.accept()
 
-    def resizeEvent(self, event):
-        super().resizeEvent(event)
-        if hasattr(self, 'preview_stack') and self.preview_stack.currentIndex() == 0:
-            self.show_still()
-
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
@@ -1369,6 +1534,7 @@ def main():
     app = QApplication.instance() or QApplication([])
     app.setApplicationName('Video Novel Studio')
     app.setOrganizationName('Local Studio')
+    app.setStyle('Fusion')
     window = StudioWindow(args.workspace)
     window.show()
     raise SystemExit(app.exec())

@@ -1,0 +1,106 @@
+{
+  "platform": "offscreen",
+  "checks": [
+    {
+      "theme": "light",
+      "scale": 1.5,
+      "requested_window": [
+        1280,
+        800
+      ],
+      "actual_window": [
+        1280,
+        800
+      ],
+      "preview": [
+        302,
+        362
+      ],
+      "render_button": [
+        101,
+        34
+      ],
+      "idle_progress_hidden": true,
+      "idle_cancel_hidden": true,
+      "idle_details_hidden": true,
+      "image_video_controls_hidden": true,
+      "all_navigation_pages": 10
+    },
+    {
+      "theme": "light",
+      "scale": 1.5,
+      "requested_window": [
+        1440,
+        900
+      ],
+      "actual_window": [
+        1440,
+        900
+      ],
+      "preview": [
+        373,
+        462
+      ],
+      "render_button": [
+        101,
+        34
+      ],
+      "idle_progress_hidden": true,
+      "idle_cancel_hidden": true,
+      "idle_details_hidden": true,
+      "image_video_controls_hidden": true,
+      "all_navigation_pages": 10
+    },
+    {
+      "theme": "dark",
+      "scale": 1.5,
+      "requested_window": [
+        1280,
+        800
+      ],
+      "actual_window": [
+        1280,
+        800
+      ],
+      "preview": [
+        302,
+        362
+      ],
+      "render_button": [
+        101,
+        34
+      ],
+      "idle_progress_hidden": true,
+      "idle_cancel_hidden": true,
+      "idle_details_hidden": true,
+      "image_video_controls_hidden": true,
+      "all_navigation_pages": 10
+    },
+    {
+      "theme": "dark",
+      "scale": 1.5,
+      "requested_window": [
+        1440,
+        900
+      ],
+      "actual_window": [
+        1440,
+        900
+      ],
+      "preview": [
+        373,
+        462
+      ],
+      "render_button": [
+        101,
+        34
+      ],
+      "idle_progress_hidden": true,
+      "idle_cancel_hidden": true,
+      "idle_details_hidden": true,
+      "image_video_controls_hidden": true,
+      "all_navigation_pages": 10
+    }
+  ],
+  "note": "Actual Qt widgets and supplied sample art in a temporary workspace. Job/error captures demonstrate simulated states; no render or service call is made."
+}

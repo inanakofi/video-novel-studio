@@ -1,5 +1,12 @@
 # Video Novel Studio
 
+The studio now includes coordinated light and dark appearances, media thumbnails,
+grouped scene/settings inspectors, cleaner tabs and controls, and collapsible
+render details. Choose **Appearance** at the
+bottom of the sidebar: **System**, **Light**, or **Dark**. The choice is saved
+for the workspace. See [the appearance refresh](UI_REFRESH.md) and
+[the workspace improvements and screenshots](UI_WORKSPACE.md).
+
 **Complete beginner guide:** [TUTORIAL.md](TUTORIAL.md) covers fresh-PC setup,
 offline video production, AI APIs/MCP, and automatic manuscript production.
 

@@ -1,0 +1,17 @@
+test_create_import_edit_caption_render_play_and_reopen (test_desktop.DesktopWorkflowTests.test_create_import_edit_caption_render_play_and_reopen) ... ok
+test_export_list_uses_moved_workspace_files (test_desktop.DesktopWorkflowTests.test_export_list_uses_moved_workspace_files) ... ok
+test_installed_voice_button_creates_a_real_recording (test_desktop.DesktopWorkflowTests.test_installed_voice_button_creates_a_real_recording) ... ok
+test_waveform_drag_audition_series_continuity_and_publishing (test_editing_desktop.EditingDesktopTests.test_waveform_drag_audition_series_continuity_and_publishing) ... ok
+test_openrouter_review_apply_video_import_offline_render_and_reopen (test_connections_desktop.ConnectionDesktopTests.test_openrouter_review_apply_video_import_offline_render_and_reopen) ... ok
+test_active_job_cancel_and_failure_details_remain_accessible (test_ui_theme.AppearanceDesktopTests.test_active_job_cancel_and_failure_details_remain_accessible) ... ok
+test_artwork_keeps_its_aspect_and_fits_when_details_expand (test_ui_theme.AppearanceDesktopTests.test_artwork_keeps_its_aspect_and_fits_when_details_expand) ... ok
+test_bad_appearance_state_falls_back_without_blocking_startup (test_ui_theme.AppearanceDesktopTests.test_bad_appearance_state_falls_back_without_blocking_startup) ... ok
+test_media_controls_follow_scene_type_and_keep_hidden_values (test_ui_theme.AppearanceDesktopTests.test_media_controls_follow_scene_type_and_keep_hidden_values) ... ok
+test_system_changes_follow_system_choice_and_respect_manual_choice (test_ui_theme.AppearanceDesktopTests.test_system_changes_follow_system_choice_and_respect_manual_choice) ... ok
+test_theme_choice_survives_reopen_without_discarding_edits (test_ui_theme.AppearanceDesktopTests.test_theme_choice_survives_reopen_without_discarding_edits) ... ok
+test_readable_text_controls_and_timeline_categories_in_both_themes (test_ui_theme.ThemeContrastTests.test_readable_text_controls_and_timeline_categories_in_both_themes) ... ok
+
+----------------------------------------------------------------------
+Ran 12 tests in 26.508s
+
+OK
