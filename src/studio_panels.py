@@ -19,7 +19,7 @@ from .subtitle_generator import Cue
 from .timeline import prepare_waveform, edit_timeline
 from .timeline_widget import TimelineWidget
 from .publishing import publishing_check
-from .exports import export_source
+from .exports import export_source, export_changed
 
 
 def action(text, callback):
@@ -225,6 +225,8 @@ class ProductionPanels:
         for path in sorted((self.library.root / 'exports').glob('*.verification.json'), key=lambda p: p.stat().st_mtime, reverse=True):
             try:
                 report = json.loads(path.read_text(encoding='utf-8'))
+                if not isinstance(report, dict):
+                    continue
                 output = path.with_name(path.name.removesuffix('.verification.json') + '.mp4')
                 if export_source(report, self.library.root).resolve() == source and report.get('verified') and output.is_file():
                     target = QUrl.fromLocalFile(str(output.resolve()))
@@ -237,7 +239,7 @@ class ProductionPanels:
                         self.play_export(output)
                     self._audition_scene = None
                     self.tabs.setCurrentIndex(4)
-                    changed = digest(source) != report.get('source_sha256')
+                    changed = export_changed(report, self.library.root)
                     self.timeline_video_note.setText('Project changed · rerender to see edits' if changed else 'Playing the last verified export')
                     return
             except (OSError, ValueError, KeyError):

@@ -28,7 +28,9 @@ def extract(path):
             raise ValueError('Word documents containing XML entity declarations are unsupported.')
         root = ElementTree.fromstring(payload)
         ns = '{http://schemas.openxmlformats.org/wordprocessingml/2006/main}'
-        text = '\n\n'.join(''.join(n.text or '' for n in p.iter(ns + 't')) for p in root.iter(ns + 'p'))
+        separators = {ns + 'tab': '\t', ns + 'br': '\n', ns + 'cr': '\n'}
+        text = '\n\n'.join(''.join((n.text or '') if n.tag == ns + 't' else separators.get(n.tag, '')
+                                  for n in p.iter()) for p in root.iter(ns + 'p'))
     else:
         raise ValueError('Use a TXT, Markdown or DOCX manuscript. Export PDF/EPUB to UTF-8 text first; scanned pages need OCR.')
     text = text.replace('\r\n', '\n').replace('\r', '\n').strip()

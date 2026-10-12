@@ -141,7 +141,8 @@ class Router:
                     stage['status'] = 'submitted'
                     self.save()
                     if connection.provider == 'http':
-                        result = call_http(self.service, route, 'POST', spec['path'], arguments, self.cancel)
+                        result = call_http(self.service, route, 'POST', spec['path'], arguments, self.cancel,
+                                           capture_submission=True)
                     else:
                         result = mcp_action(self.service, route, tool_name=spec['tool'], arguments=arguments, cancel=self.cancel)
                     # Preserve the response even if cancellation arrives immediately after submission.

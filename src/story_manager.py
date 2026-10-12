@@ -51,9 +51,17 @@ class StoryLibrary:
 
     def story_title(self, story: Path) -> str:
         path = story / 'story.json'
+        fallback = story.name.replace('_', ' ').title()
         if path.is_file():
-            return json.loads(path.read_text(encoding='utf-8'))['title']
-        return story.name.replace('_', ' ').title()
+            try:
+                data = json.loads(path.read_text(encoding='utf-8'))
+                if isinstance(data, dict) and isinstance(data.get('title'), str) and data['title'].strip():
+                    return data['title']
+            except (OSError, ValueError):
+                pass
+            # A damaged library entry must not prevent access to healthy stories.
+            return fallback + ' (invalid story.json)'
+        return fallback
 
     def create_story(self, title: str, premise: str = '') -> Path:
         if not title.strip():

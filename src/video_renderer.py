@@ -2,7 +2,6 @@
 
 import argparse
 import json
-import hashlib
 import os
 from pathlib import Path
 import tempfile
@@ -16,7 +15,8 @@ from .media import MediaError, RenderCancelled, ffmpeg, verify_export, atomic_js
 from .audio_manager import inspect_narration, prepare_voice, mix_audio
 from .subtitle_generator import make_cues, parse_srt, validate_cues, cues_to_srt, write_ass
 from .visuals import prepare_image, card
-from .render_cache import ShotCache, shot_key
+from .render_cache import ShotCache, shot_key, digest
+from .exports import source_inputs_sha256
 
 
 def asset_errors(episode: Episode) -> list[str]:
@@ -172,6 +172,7 @@ def render_episode(scenes_path: str | Path, output: str | Path, *, cancel: threa
                    progress=None, overrides: dict | None = None, use_cache: bool = True) -> dict:
     """Publish an MP4 only after stream checks and a successful full decode."""
     from dataclasses import replace
+    source_sha256 = digest(Path(scenes_path))
     episode = load_episode(scenes_path)
     if overrides:
         episode = replace(episode, settings={**episode.settings, **overrides})
@@ -197,6 +198,7 @@ def render_episode(scenes_path: str | Path, output: str | Path, *, cancel: threa
         errors = asset_errors(episode)
         if errors:
             raise MediaError('\n'.join(errors))
+        inputs_sha256 = source_inputs_sha256(Path(scenes_path))
         spans = inspect_narration(episode)
         title_duration, end_duration = card_durations(settings)
         # Snap scene slots to frame boundaries so audio and transitions share exact times.
@@ -268,16 +270,19 @@ def render_episode(scenes_path: str | Path, output: str | Path, *, cancel: threa
             notify(.95, 'Verifying codecs, timing and full playback decode')
             report = verify_export(staged, width=settings['width'], height=settings['height'], fps=settings['fps'],
                                    duration=duration, subtitle_end=max((cue.end for cue in cues), default=0), cancel=cancel)
+            if digest(Path(scenes_path)) != source_sha256 or source_inputs_sha256(Path(scenes_path)) != inputs_sha256:
+                raise MediaError('Project, captions or media changed during rendering. Save the project and rerender; the previous export was preserved.')
             report.update({'output': str(output), 'episode_id': episode.episode_id,
                            'completed_utc': datetime.now(timezone.utc).isoformat(),
                            'source': str(Path(scenes_path).resolve()),
-                           'source_sha256': hashlib.sha256(Path(scenes_path).read_bytes()).hexdigest(),
+                           'source_sha256': source_sha256,
+                           'source_inputs_sha256': inputs_sha256,
                            'target_duration_seconds': settings['target_duration'],
                            'within_default_60_90_seconds': 60 <= duration <= 90,
                            'caption_count': len(cues),
                            'scene_cache': {'enabled': use_cache, 'hits': cache_hits, 'misses': len(jobs) - cache_hits}})
             report['ffprobe']['format']['filename'] = str(output)
-            report['output_sha256'] = hashlib.sha256(staged.read_bytes()).hexdigest()
+            report['output_sha256'] = digest(staged)
             staged_report = work / 'verification.json'
             atomic_json(staged_report, report)
             notify(.99, 'Publishing verified export')

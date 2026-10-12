@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import argparse
 from dataclasses import replace
-import hashlib
 import json
 import math
 import os
@@ -33,7 +32,7 @@ from .video_renderer import render_episode, asset_errors
 from .studio_panels import ProductionPanels
 from .connection_panels import ConnectionPanels
 from .production_panels import AutomationPanels
-from .exports import export_source
+from .exports import export_changed
 
 
 STYLE = '''
@@ -595,7 +594,10 @@ class StudioWindow(ProductionPanels, ConnectionPanels, AutomationPanels, QMainWi
     def _story_changed(self, index, select_episode=None):
         if self._loading or index < 0:
             return
-        if self.episode and not self.save_all(quiet=True):
+        if not self.save_all(quiet=True):
+            self.story_combo.blockSignals(True)
+            self.story_combo.setCurrentIndex(self.story_combo.findData(str(self.story)))
+            self.story_combo.blockSignals(False)
             return
         self.story = Path(self.story_combo.itemData(index))
         self.episode = None
@@ -628,6 +630,13 @@ class StudioWindow(ProductionPanels, ConnectionPanels, AutomationPanels, QMainWi
         if self._loading or row < 0:
             return
         if self.episode and not self.save_all(quiet=True):
+            self.episode_list.blockSignals(True)
+            current = str(self.episode.directory / 'scenes.json')
+            for index in range(self.episode_list.count()):
+                if self.episode_list.item(index).data(Qt.ItemDataRole.UserRole) == current:
+                    self.episode_list.setCurrentRow(index)
+                    break
+            self.episode_list.blockSignals(False)
             return
         item = self.episode_list.item(row)
         self._guard(lambda: self.load_project(Path(item.data(Qt.ItemDataRole.UserRole))))
@@ -818,6 +827,7 @@ class StudioWindow(ProductionPanels, ConnectionPanels, AutomationPanels, QMainWi
 
     def _save(self, *, regenerate_captions=False):
         if not self.episode:
+            self._save_bible()
             return True
         self._commit_scene()
         settings = self._collect_settings()
@@ -1305,23 +1315,25 @@ class StudioWindow(ProductionPanels, ConnectionPanels, AutomationPanels, QMainWi
         for path in sorted((self.library.root / 'exports').glob('*.verification.json'), key=lambda p: p.stat().st_mtime, reverse=True):
             try:
                 report = json.loads(path.read_text(encoding='utf-8'))
+                if not isinstance(report, dict):
+                    continue
                 # Reports retain historical render paths. The paired MP4 moves
                 # with its sidecar when a workspace is cloned or copied.
                 output = path.with_name(path.name.removesuffix('.verification.json') + '.mp4')
                 if not report.get('verified') or not output.is_file():
                     continue
                 status = 'Verified · full decode passed'
-                source = export_source(report, self.library.root)
-                if source.is_file() and hashlib.sha256(source.read_bytes()).hexdigest() != report.get('source_sha256'):
+                if export_changed(report, self.library.root):
                     status = 'Verified export · project changed since render'
+                values = (output.name, f'{report["width"]} × {report["height"]} / {report["fps"]}', f'{report["video_duration_seconds"]:.2f}s', status)
                 row = self.export_table.rowCount()
                 self.export_table.insertRow(row)
-                for column, value in enumerate((output.name, f'{report["width"]} × {report["height"]} / {report["fps"]}', f'{report["video_duration_seconds"]:.2f}s', status)):
+                for column, value in enumerate(values):
                     item = QTableWidgetItem(value)
                     if column == 0:
                         item.setData(Qt.ItemDataRole.UserRole, str(output))
                     self.export_table.setItem(row, column, item)
-            except (OSError, ValueError, KeyError):
+            except (OSError, ValueError, KeyError, TypeError):
                 continue
 
     def play_selected_export(self):

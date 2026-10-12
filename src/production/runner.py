@@ -123,6 +123,8 @@ class ProductionRunner:
             raise ValueError('Choose preview or full resolution.')
         if type(config.get('references', False)) is not bool or type(config.get('pause_after_plan', False)) is not bool:
             raise ValueError('Invalid production options.')
+        if not isinstance(config.get('routes'), dict):
+            raise ValueError('Production routes must be an object of task names to connection IDs.')
         tool('ffmpeg')
         tool('ffprobe')
         required = {'analysis', 'writing', 'review', 'voice', 'image' if config['format'] == 'narrated' else 'video'}
@@ -134,13 +136,13 @@ class ProductionRunner:
             required.add('lipsync')
         snapshots = {}
         local_speech_needed = False
-        for role in required:
-            route = config.get('routes', {}).get(role)
+        def validate_route(role, route):
+            nonlocal local_speech_needed
             if route == 'local_speech' and role == 'voice':
                 if os.name != 'nt':
                     raise ValueError('Installed speech is Windows-only. Choose a voice connection.')
                 local_speech_needed = True
-                continue
+                return
             mode, connection = self.service.connection(route)
             if connection.provider != 'mcp_stdio':
                 validate_url(connection.base_url, mode)
@@ -151,6 +153,8 @@ class ProductionRunner:
                 key = 'path' if connection.provider == 'http' else 'tool'
                 if not isinstance(spec.get(key), str) or not spec[key].strip() or not isinstance(spec.get('arguments', {}), dict):
                     raise ValueError(f'{connection.name}: production.{ROLE_KINDS[role]} needs {key} and an arguments object.')
+                if connection.provider == 'http' and (not spec['path'].startswith('/') or spec['path'].startswith('//') or '\\' in spec['path']):
+                    raise ValueError(f'{connection.name}: production path must start with a single /.')
                 if connection.provider.startswith('mcp_') and importlib.util.find_spec('mcp') is None:
                     raise ValueError('Install requirements-integrations.txt before starting an MCP production.')
                 if connection.provider == 'mcp_stdio' and not connection.options.get('command'):
@@ -164,23 +168,15 @@ class ProductionRunner:
                 if not isinstance(graph, dict) or not graph or not all(isinstance(v, dict) and 'class_type' in v and isinstance(v.get('inputs'), dict) for v in graph.values()) or '{{prompt}}' not in json.dumps(graph):
                     raise ValueError(f'{connection.name}: load a valid API workflow containing {{{{prompt}}}}.')
             snapshots[route] = asdict(connection)
+        for role in required:
+            validate_route(role, config['routes'].get(role))
         voices = config.get('speaker_routes', {})
         if not isinstance(voices, dict):
             raise ValueError('Speaker routes must be a JSON object of speaker ID to connection ID.')
         for speaker, route in voices.items():
             if not isinstance(speaker, str) or not re.fullmatch(r'NARRATOR|CHAR-[0-9]{3}', speaker):
                 raise ValueError('Voice overrides use NARRATOR or CHAR-001-style IDs.')
-            if route == 'local_speech':
-                if os.name != 'nt':
-                    raise ValueError('Installed speech is Windows-only.')
-                local_speech_needed = True
-                continue
-            mode, connection = self.service.connection(route)
-            if not capability(connection, 'voice'):
-                raise ValueError(f'{connection.name} cannot generate a character voice.')
-            if connection.provider != 'mcp_stdio':
-                validate_url(connection.base_url, mode)
-            snapshots[route] = asdict(connection)
+            validate_route('voice', route)
         if local_speech_needed:
             voices = installed_voices()
             if not voices or (config.get('local_voice') and config['local_voice'] not in voices):
@@ -209,8 +205,15 @@ class ProductionRunner:
 
     def load(self, run_id):
         state = json.loads((self.runs / identifier(run_id) / 'run.json').read_text(encoding='utf-8'))
-        if state.get('version') != 1 or state.get('id') != run_id:
+        if not isinstance(state, dict) or state.get('version') != 1 or state.get('id') != run_id:
             raise ValueError('Unsupported or mismatched production run.')
+        if (any(not isinstance(state.get(key), str) for key in ('created_utc', 'story', 'status', 'current_stage'))
+                or not isinstance(state.get('config'), dict)
+                or not isinstance(state['config'].get('title'), str)
+                or state['config'].get('format') not in FORMATS
+                or not isinstance(state.get('stages'), dict)
+                or not isinstance(state.get('exports'), list)):
+            raise ValueError('Invalid saved production run.')
         story = (self.root / state['story']).resolve()
         if not story.is_relative_to(self.root / 'stories'):
             raise ValueError('Production story must remain inside this workspace.')
@@ -276,6 +279,9 @@ class ProductionRunner:
         try:
             with handle:
                 handle.write(str(os.getpid()))
+            # Another worker may have completed between our initial read and
+            # exclusive open. Use the state protected by this lock.
+            state = self.load(run_id)
             if state['status'] == 'complete':
                 return state
             self.preflight(state['config'])

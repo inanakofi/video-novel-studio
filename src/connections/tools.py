@@ -8,13 +8,14 @@ from .generation import GenerationService
 from .transport import ConnectionError, validate_url, check_cancel
 
 
-def call_http(service: GenerationService, connection_id, method, path, body=None, cancel=None):
+def call_http(service: GenerationService, connection_id, method, path, body=None, cancel=None,
+              *, capture_submission=False):
     transport = service.transport(connection_id, cancel)
     if transport.connection.provider != 'http':
         raise ValueError('Select a JSON HTTP API connection')
     if body is not None and not isinstance(body, (dict, list)):
         raise ValueError('HTTP request body must be a JSON object or array')
-    return transport.request(method, path, body)
+    return transport.request(method, path, body, capture_submission=capture_submission)
 
 
 def mcp_action(service: GenerationService, connection_id, *, tool_name=None, arguments=None, cancel=None):

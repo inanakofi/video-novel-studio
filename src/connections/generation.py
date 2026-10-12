@@ -145,18 +145,24 @@ class GenerationService:
         result = []
         for path in sorted(self.jobs.glob('*/job.json'), reverse=True):
             try:
-                data = json.loads(path.read_text(encoding='utf-8'))
-                identifier(data['id'])
-                result.append(data)
-            except (OSError, ValueError, KeyError):
+                result.append(self.load_job(path.parent.name))
+            except (OSError, ValueError, KeyError, TypeError):
                 continue
         return sorted(result, key=lambda j: j['created_utc'], reverse=True)
 
     def load_job(self, job_id):
         path = self.jobs / identifier(job_id) / 'job.json'
         data = json.loads(path.read_text(encoding='utf-8'))
-        if data['id'] != job_id:
+        if not isinstance(data, dict) or data.get('id') != job_id:
             raise ValueError('Job ID mismatch')
+        if (any(not isinstance(data.get(key), str) for key in ('created_utc', 'kind', 'status'))
+                or data['kind'] not in ('story', 'script', 'image', 'voice', 'video')
+                or not isinstance(data.get('connection'), dict)
+                or not isinstance(data['connection'].get('name'), str)
+                or not isinstance(data.get('artifacts'), list)
+                or any(not isinstance(name, str) or not name or Path(name).name != name
+                       for name in data['artifacts'])):
+            raise ValueError('Invalid saved generation job')
         return data
 
     def run(self, connection_id, kind, prompt, *, cancel=None, progress=None, resume=None, target=None, job_id=None):

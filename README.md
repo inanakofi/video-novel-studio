@@ -3,6 +3,9 @@
 **Complete beginner guide:** [TUTORIAL.md](TUTORIAL.md) covers fresh-PC setup,
 offline video production, AI APIs/MCP, and automatic manuscript production.
 
+The latest review, fixes, test results and outstanding draft assets are recorded
+in [REVIEW_REPORT.md](REVIEW_REPORT.md).
+
 ## Manuscript → videos
 
 Attach a TXT, Markdown or DOCX manuscript, choose narrated visual novel,
@@ -211,6 +214,13 @@ belong to the operating system; they are not bundled voice models.
 11. The embedded player plays the actual verified output. Play/pause and seek
     through it. The Exports tab shows verified files and flags changed source
     projects. Each MP4 has an SRT sidecar and a `.verification.json` report.
+
+New verification reports track scene settings, manual captions and referenced
+images, foregrounds, videos, narration, music and sound effects. Changing or
+removing those inputs marks the export as outdated, including after moving the
+workspace. A detected source change during rendering prevents publication and
+preserves the previous export. Older reports track only `scenes.json`; rerender
+once to enable the expanded checks.
 
 Use **Save project** to persist edits. Switching scenes keeps form edits in
 memory; switching stories/episodes and closing the window save the project.

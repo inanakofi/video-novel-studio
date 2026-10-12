@@ -44,7 +44,7 @@ class Connection:
 
     def validate(self):
         identifier(self.id)
-        if self.provider not in PRESETS:
+        if not isinstance(self.provider, str) or self.provider not in PRESETS:
             raise ValueError('Unsupported connection provider')
         if not isinstance(self.name, str) or not self.name.strip():
             raise ValueError('Connection needs a name')
@@ -85,9 +85,14 @@ class ConnectionStore:
         if not self.path.exists():
             return 'disabled', []
         data = json.loads(self.path.read_text(encoding='utf-8'))
-        if data.get('version') != 1 or data.get('mode') not in MODES:
+        if not isinstance(data, dict) or data.get('version') != 1 or data.get('mode') not in MODES:
             raise ValueError('Unsupported connections configuration')
-        records = [Connection(**record).validate() for record in data['connections']]
+        if not isinstance(data.get('connections'), list):
+            raise ValueError('Connections configuration needs a connections array')
+        try:
+            records = [Connection(**record).validate() for record in data['connections']]
+        except TypeError:
+            raise ValueError('Each connection must be an object with valid profile fields') from None
         if len({c.id for c in records}) != len(records):
             raise ValueError('Duplicate connection ID')
         return data['mode'], records

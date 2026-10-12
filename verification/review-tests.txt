@@ -1,0 +1,161 @@
+test_empty_exception_is_reported_without_a_second_exception (test_audit_regressions.EditorRegressionTests.test_empty_exception_is_reported_without_a_second_exception) ... ok
+test_generate_captions_recovers_from_invalid_unsaved_timings (test_audit_regressions.EditorRegressionTests.test_generate_captions_recovers_from_invalid_unsaved_timings) ... ok
+test_open_and_save_preserves_non_preset_frame_rate (test_audit_regressions.EditorRegressionTests.test_open_and_save_preserves_non_preset_frame_rate) ... ok
+test_timeline_plays_paired_export_after_workspace_move (test_audit_regressions.EditorRegressionTests.test_timeline_plays_paired_export_after_workspace_move) ... ok
+test_valid_nonobject_session_state_does_not_crash_startup (test_audit_regressions.EditorRegressionTests.test_valid_nonobject_session_state_does_not_crash_startup) ... ok
+test_asset_checked_render_plan_accepts_silent_scenes (test_audit_regressions.ProjectRegressionTests.test_asset_checked_render_plan_accepts_silent_scenes) ... ok
+test_asset_checked_render_plan_checks_foreground_layers (test_audit_regressions.ProjectRegressionTests.test_asset_checked_render_plan_checks_foreground_layers) ... ok
+test_documented_schema_accepts_saved_video_scenes (test_audit_regressions.ProjectRegressionTests.test_documented_schema_accepts_saved_video_scenes) ... ok
+test_invalid_sound_effects_are_rejected_before_loading_the_editor (test_audit_regressions.ProjectRegressionTests.test_invalid_sound_effects_are_rejected_before_loading_the_editor) ... ok
+test_script_rebuild_detaches_previous_recordings_and_manual_captions (test_audit_regressions.ProjectRegressionTests.test_script_rebuild_detaches_previous_recordings_and_manual_captions) ... ok
+test_cancel_during_submission_still_saves_provider_id (test_connections.ConnectionTests.test_cancel_during_submission_still_saves_provider_id) ... ok
+test_comfy_workflow_substitution_and_media_download (test_connections.ConnectionTests.test_comfy_workflow_substitution_and_media_download) ... ok
+test_config_rejects_plaintext_secret_options (test_connections.ConnectionTests.test_config_rejects_plaintext_secret_options) ... ok
+test_encrypted_credentials_and_delete (test_connections.ConnectionTests.test_encrypted_credentials_and_delete) ... ok
+test_failure_no_retry_or_ready_job (test_connections.ConnectionTests.test_failure_no_retry_or_ready_job) ... ok
+test_interrupted_video_job_resumes_without_second_post (test_connections.ConnectionTests.test_interrupted_video_job_resumes_without_second_post) ... ok
+test_invalid_download_is_not_a_completed_generation (test_connections.ConnectionTests.test_invalid_download_is_not_a_completed_generation) ... ok
+test_invalid_json_is_reviewable_but_not_applicable (test_connections.ConnectionTests.test_invalid_json_is_reviewable_but_not_applicable) ... ok
+test_local_mode_and_https_and_credentials_origin (test_connections.ConnectionTests.test_local_mode_and_https_and_credentials_origin) ... ok
+test_offline_denied_before_transport_or_dns (test_connections.ConnectionTests.test_offline_denied_before_transport_or_dns) ... ok
+test_ollama_and_compatible_dialects (test_connections.ConnectionTests.test_ollama_and_compatible_dialects) ... ok
+test_openrouter_discovery_and_structured_script (test_connections.ConnectionTests.test_openrouter_discovery_and_structured_script) ... ok
+test_preassigned_id_rechecks_under_lock_and_preserves_completed_job (test_connections.ConnectionTests.test_preassigned_id_rechecks_under_lock_and_preserves_completed_job) ... ok
+test_real_audio_file_received_and_validated (test_connections.ConnectionTests.test_real_audio_file_received_and_validated) ... ok
+test_redirects_are_not_followed (test_connections.ConnectionTests.test_redirects_are_not_followed) ... ok
+test_script_apply_never_uses_model_paths_or_stale_voice (test_connections.ConnectionTests.test_script_apply_never_uses_model_paths_or_stale_voice) ... ok
+test_openrouter_review_apply_video_import_offline_render_and_reopen (test_connections_desktop.ConnectionDesktopTests.test_openrouter_review_apply_video_import_offline_render_and_reopen) ... Input #0, mov,mp4,m4a,3gp,3g2,mj2, from 'C:/Users/Fiifi/AppData/Local/Temp/VNS UI connections été 7duacffx/workspace/exports/openrouter_ui_test_episode_001.preview.mp4':
+  Metadata:
+    major_brand     : isom
+    minor_version   : 512
+    compatible_brands: isomiso2avc1mp41
+    encoder         : Lavf63.1.100
+  Duration: 00:00:00.80, start: 0.000000, bitrate: 1331 kb/s
+  Stream #0:0[0x1](und): Video: h264 (Constrained Baseline) (avc1 / 0x31637661), yuv420p(progressive), 360x640 [SAR 1:1 DAR 9:16], 1307 kb/s, 30 fps, 30 tbr, 15360 tbn (default)
+      Metadata:
+        handler_name    : VideoHandler
+        vendor_id       : [0][0][0][0]
+        encoder         : Lavc63.1.100 libx264
+  Stream #0:1[0x2](und): Audio: aac (LC) (mp4a / 0x6134706D), 48000 Hz, stereo, fltp, 2 kb/s (default)
+      Metadata:
+        handler_name    : SoundHandler
+        vendor_id       : [0][0][0][0]
+ok
+test_create_import_edit_caption_render_play_and_reopen (test_desktop.DesktopWorkflowTests.test_create_import_edit_caption_render_play_and_reopen) ... Input #0, mov,mp4,m4a,3gp,3g2,mj2, from 'C:/Users/Fiifi/AppData/Local/Temp/Desktop été j7vntkqt/workspace/exports/ete_studio_workflow_episode_001.preview.mp4':
+  Metadata:
+    major_brand     : isom
+    minor_version   : 512
+    compatible_brands: isomiso2avc1mp41
+    encoder         : Lavf63.1.100
+  Duration: 00:00:14.97, start: 0.000000, bitrate: 1042 kb/s
+  Stream #0:0[0x1](und): Video: h264 (Constrained Baseline) (avc1 / 0x31637661), yuv420p(progressive), 360x640 [SAR 1:1 DAR 9:16], 883 kb/s, 30 fps, 30 tbr, 15360 tbn (default)
+      Metadata:
+        handler_name    : VideoHandler
+        vendor_id       : [0][0][0][0]
+        encoder         : Lavc63.1.100 libx264
+  Stream #0:1[0x2](und): Audio: aac (LC) (mp4a / 0x6134706D), 48000 Hz, stereo, fltp, 151 kb/s (default)
+      Metadata:
+        handler_name    : SoundHandler
+        vendor_id       : [0][0][0][0]
+ok
+test_export_list_uses_moved_workspace_files (test_desktop.DesktopWorkflowTests.test_export_list_uses_moved_workspace_files) ... ok
+test_installed_voice_button_creates_a_real_recording (test_desktop.DesktopWorkflowTests.test_installed_voice_button_creates_a_real_recording) ... ok
+test_waveform_drag_audition_series_continuity_and_publishing (test_editing_desktop.EditingDesktopTests.test_waveform_drag_audition_series_continuity_and_publishing) ... Input #0, wav, from 'C:/Users/Fiifi/AppData/Local/Temp/Timeline été 5uctk741/stories/serial/episodes/episode_001/.vns-cache/waveforms/09628efdb1c4d820549636f1cb49a9cf8c929913eeb6238991d2e0cf46c5748e.wav':
+  Metadata:
+    encoder         : Lavf63.1.100
+  Duration: 00:00:03.20, bitrate: 256 kb/s
+  Stream #0:0: Audio: pcm_s16le ([1][0][0][0] / 0x0001), 16000 Hz, 1 channels, s16, 256 kb/s
+Input #0, wav, from 'C:/Users/Fiifi/AppData/Local/Temp/Timeline été 5uctk741/stories/serial/episodes/episode_001/.vns-cache/waveforms/6c6bbc6347b59fabb3b406e43238d9958df078c382ccba20130fd48c3bdf03a1.wav':
+  Metadata:
+    encoder         : Lavf63.1.100
+  Duration: 00:00:03.50, bitrate: 256 kb/s
+  Stream #0:0: Audio: pcm_s16le ([1][0][0][0] / 0x0001), 16000 Hz, 1 channels, s16, 256 kb/s
+Input #0, wav, from 'C:/Users/Fiifi/AppData/Local/Temp/Timeline été 5uctk741/stories/serial/episodes/episode_001/.vns-cache/waveforms/6c6bbc6347b59fabb3b406e43238d9958df078c382ccba20130fd48c3bdf03a1.wav':
+  Metadata:
+    encoder         : Lavf63.1.100
+  Duration: 00:00:03.50, bitrate: 256 kb/s
+  Stream #0:0: Audio: pcm_s16le ([1][0][0][0] / 0x0001), 16000 Hz, 1 channels, s16, 256 kb/s
+ok
+test_real_rerenders_reuse_then_invalidate_shots_and_recover_corruption (test_improvements.CacheIntegrationTests.test_real_rerenders_reuse_then_invalidate_shots_and_recover_corruption) ... ok
+test_automatic_captions_respect_two_wrapped_lines (test_improvements.EditingTests.test_automatic_captions_respect_two_wrapped_lines) ... ok
+test_caption_millisecond_edit_preserves_audio_boundary_and_rejects_overlap (test_improvements.EditingTests.test_caption_millisecond_edit_preserves_audio_boundary_and_rejects_overlap) ... ok
+test_continuity_tracks_episode_specific_threads_and_scene_references (test_improvements.EditingTests.test_continuity_tracks_episode_specific_threads_and_scene_references) ... ok
+test_continuous_recording_cannot_silently_ripple (test_improvements.EditingTests.test_continuous_recording_cannot_silently_ripple) ... ok
+test_publishing_check_reports_assets_margins_duration_and_pauses (test_improvements.EditingTests.test_publishing_check_reports_assets_margins_duration_and_pauses) ... ok
+test_ripple_moves_later_effects_and_manual_styles_follow_scene (test_improvements.EditingTests.test_ripple_moves_later_effects_and_manual_styles_follow_scene) ... ok
+test_scene_trim_ripples_later_captions_and_preserves_voice (test_improvements.EditingTests.test_scene_trim_ripples_later_captions_and_preserves_voice) ... ok
+test_series_defaults_inherit_without_mutating_old_episode_or_music_path (test_improvements.EditingTests.test_series_defaults_inherit_without_mutating_old_episode_or_music_path) ... ok
+test_transition_and_sound_effect_edits_are_bounded (test_improvements.EditingTests.test_transition_and_sound_effect_edits_are_bounded) ... ok
+test_waveform_is_actual_pcm_with_cards_and_content_invalidation (test_improvements.EditingTests.test_waveform_is_actual_pcm_with_cards_and_content_invalidation) ... ok
+test_active_output_lock_prevents_competing_render (test_media_pipeline.MediaPipelineTests.test_active_output_lock_prevents_competing_render) ... ok
+test_batch_reports_each_success_and_failure (test_media_pipeline.MediaPipelineTests.test_batch_reports_each_success_and_failure) ... ok
+test_final_audio_limiter_prevents_clipping_with_loud_music (test_media_pipeline.MediaPipelineTests.test_final_audio_limiter_prevents_clipping_with_loud_music) ... ok
+test_fit_target_preserves_narration_and_rejects_impossible_length (test_media_pipeline.MediaPipelineTests.test_fit_target_preserves_narration_and_rejects_impossible_length) ... ok
+test_interrupted_render_preserves_export_and_can_rerun (test_media_pipeline.MediaPipelineTests.test_interrupted_render_preserves_export_and_can_rerun) ... ok
+test_invalid_manual_subtitle_bounds_fail_honestly (test_media_pipeline.MediaPipelineTests.test_invalid_manual_subtitle_bounds_fail_honestly) ... ok
+test_long_audio_is_rejected_instead_of_truncated (test_media_pipeline.MediaPipelineTests.test_long_audio_is_rejected_instead_of_truncated) ... ok
+test_missing_asset_fails_without_publishing (test_media_pipeline.MediaPipelineTests.test_missing_asset_fails_without_publishing) ... ok
+test_pcm_slots_are_exact_even_after_loudness_normalization (test_media_pipeline.MediaPipelineTests.test_pcm_slots_are_exact_even_after_loudness_normalization) ... ok
+test_publication_error_rolls_back_video_and_sidecars (test_media_pipeline.MediaPipelineTests.test_publication_error_rolls_back_video_and_sidecars) ... ok
+test_real_export_resolution_fps_encoding_and_decode (test_media_pipeline.MediaPipelineTests.test_real_export_resolution_fps_encoding_and_decode) ... ok
+test_short_episode_recording_is_rejected (test_media_pipeline.MediaPipelineTests.test_short_episode_recording_is_rejected) ... ok
+test_subtitles_stay_in_actual_narration_windows (test_media_pipeline.MediaPipelineTests.test_subtitles_stay_in_actual_narration_windows) ... ok
+test_verification_report_is_bound_to_source_file (test_media_pipeline.MediaPipelineTests.test_verification_report_is_bound_to_source_file) ... ok
+test_verifier_rejects_wrong_export_contract (test_media_pipeline.MediaPipelineTests.test_verifier_rejects_wrong_export_contract) ... ok
+test_all_characters_are_covered_without_overlap_or_truncation (test_production.ManuscriptTests.test_all_characters_are_covered_without_overlap_or_truncation) ... ok
+test_contract_validation_and_typed_templates (test_production.ManuscriptTests.test_contract_validation_and_typed_templates) ... ok
+test_docx_plain_text_and_xml_entities (test_production.ManuscriptTests.test_docx_plain_text_and_xml_entities) ... ok
+test_attach_route_produce_and_open_generated_episode (test_production.ProductionDesktopTests.test_attach_route_produce_and_open_generated_episode) ... ok
+test_actual_mcp_stdio_production_route (test_production.ProductionTests.test_actual_mcp_stdio_production_route) ... ok
+test_all_three_formats_render_real_verified_videos_and_resume_without_calls (test_production.ProductionTests.test_all_three_formats_render_real_verified_videos_and_resume_without_calls) ... ok
+test_call_limit_stops_before_next_submission_and_run_lock_blocks_duplicates (test_production.ProductionTests.test_call_limit_stops_before_next_submission_and_run_lock_blocks_duplicates) ... ok
+test_disabled_connections_preflight_and_changed_profile (test_production.ProductionTests.test_disabled_connections_preflight_and_changed_profile) ... ok
+test_existing_provider_task_resumes_without_new_submission (test_production.ProductionTests.test_existing_provider_task_resumes_without_new_submission) ... ok
+test_invalid_text_can_be_corrected_without_resubmitting (test_production.ProductionTests.test_invalid_text_can_be_corrected_without_resubmitting) ... ok
+test_lipsync_receives_recorded_audio_and_assembled_video (test_production.ProductionTests.test_lipsync_receives_recorded_audio_and_assembled_video) ... ok
+test_paused_plan_can_assign_new_voice_profiles_before_media_generation (test_production.ProductionTests.test_paused_plan_can_assign_new_voice_profiles_before_media_generation) ... ok
+test_plan_pause_then_resume_only_generates_remaining_stages (test_production.ProductionTests.test_plan_pause_then_resume_only_generates_remaining_stages) ... ok
+test_render_interruption_resumes_without_regenerating_assets (test_production.ProductionTests.test_render_interruption_resumes_without_regenerating_assets) ... ok
+test_speaker_override_uses_its_own_model_connection (test_production.ProductionTests.test_speaker_override_uses_its_own_model_connection) ... ok
+test_tool_output_cannot_import_arbitrary_local_paths (test_production.ProductionTests.test_tool_output_cannot_import_arbitrary_local_paths) ... ok
+test_unknown_tool_outcome_never_resubmits_without_explicit_retry (test_production.ProductionTests.test_unknown_tool_outcome_never_resubmits_without_explicit_retry) ... ok
+test_empty_story_document_saves_when_switching_stories (test_review_followup.DesktopReviewTests.test_empty_story_document_saves_when_switching_stories) ... ok
+test_failed_save_keeps_sidebar_on_current_episode_and_story (test_review_followup.DesktopReviewTests.test_failed_save_keeps_sidebar_on_current_episode_and_story) ... ok
+test_malformed_optional_metadata_does_not_prevent_offline_startup (test_review_followup.DesktopReviewTests.test_malformed_optional_metadata_does_not_prevent_offline_startup) ... ok
+test_freshness_tracks_captions_and_all_media_after_workspace_move (test_review_followup.ExportReviewTests.test_freshness_tracks_captions_and_all_media_after_workspace_move) ... ok
+test_render_records_inputs_and_preserves_export_if_source_changes (test_review_followup.ExportReviewTests.test_render_records_inputs_and_preserves_export_if_source_changes) ... ok
+test_character_voice_is_validated_before_any_submission (test_review_followup.ProductionReviewTests.test_character_voice_is_validated_before_any_submission) ... ok
+test_http_response_survives_cancel_during_submission (test_review_followup.ProductionReviewTests.test_http_response_survives_cancel_during_submission) ... ok
+test_run_reloads_state_after_acquiring_its_lock (test_review_followup.ProductionReviewTests.test_run_reloads_state_after_acquiring_its_lock) ... ok
+test_docx_preserves_tabs_and_manual_line_breaks (test_review_followup.SavedDataReviewTests.test_docx_preserves_tabs_and_manual_line_breaks) ... ok
+test_invalid_connection_shapes_raise_actionable_validation_errors (test_review_followup.SavedDataReviewTests.test_invalid_connection_shapes_raise_actionable_validation_errors) ... ok
+test_invalid_job_and_production_history_are_ignored (test_review_followup.SavedDataReviewTests.test_invalid_job_and_production_history_are_ignored) ... ok
+test_asset_check_reports_missing_media_and_accepts_existing_media (test_scenes.ScenePipelineTests.test_asset_check_reports_missing_media_and_accepts_existing_media) ... ok
+test_fractional_durations_and_hidden_caption (test_scenes.ScenePipelineTests.test_fractional_durations_and_hidden_caption) ... ok
+test_plan_resolves_assets_relative_to_episode (test_scenes.ScenePipelineTests.test_plan_resolves_assets_relative_to_episode) ... ok
+test_rejects_duplicate_or_invalid_scene_ids (test_scenes.ScenePipelineTests.test_rejects_duplicate_or_invalid_scene_ids) ... ok
+test_rejects_duration_values_that_cannot_be_scheduled (test_scenes.ScenePipelineTests.test_rejects_duration_values_that_cannot_be_scheduled) ... ok
+test_rejects_empty_episode_and_unknown_fields (test_scenes.ScenePipelineTests.test_rejects_empty_episode_and_unknown_fields) ... ok
+test_rejects_episode_duration_overflow (test_scenes.ScenePipelineTests.test_rejects_episode_duration_overflow) ... ok
+test_rejects_missing_fields_and_unknown_presets (test_scenes.ScenePipelineTests.test_rejects_missing_fields_and_unknown_presets) ... ok
+test_rejects_srt_cues_shorter_than_timestamp_resolution (test_scenes.ScenePipelineTests.test_rejects_srt_cues_shorter_than_timestamp_resolution) ... ok
+test_scene_audio_starts_at_zero_and_caption_can_be_overridden (test_scenes.ScenePipelineTests.test_scene_audio_starts_at_zero_and_caption_can_be_overridden) ... ok
+test_scene_changes_follow_array_order_and_duration (test_scenes.ScenePipelineTests.test_scene_changes_follow_array_order_and_duration) ... ok
+test_srt_uses_the_same_scene_boundaries (test_scenes.ScenePipelineTests.test_srt_uses_the_same_scene_boundaries) ... ok
+test_timestamp_rounding_carries_into_minutes (test_scenes.ScenePipelineTests.test_timestamp_rounding_carries_into_minutes) ... ok
+test_actual_stdio_mcp_list_call_and_draft (test_software_connections.SoftwareConnectionTests.test_actual_stdio_mcp_list_call_and_draft) ... ok
+test_actual_streamable_http_mcp_and_tool_failure (test_software_connections.SoftwareConnectionTests.test_actual_streamable_http_mcp_and_tool_failure) ... ok
+test_generic_api_actual_local_http (test_software_connections.SoftwareConnectionTests.test_generic_api_actual_local_http) ... ok
+test_studio_tools_scoped_and_write_opt_in (test_software_connections.SoftwareConnectionTests.test_studio_tools_scoped_and_write_opt_in) ... ok
+test_breakdown_preserves_written_prose_and_generates_structured_files (test_stories.StoryTests.test_breakdown_preserves_written_prose_and_generates_structured_files) ... ok
+test_import_copies_unicode_files_and_preserves_existing_asset (test_stories.StoryTests.test_import_copies_unicode_files_and_preserves_existing_asset) ... ok
+test_invalid_save_keeps_previous_project (test_stories.StoryTests.test_invalid_save_keeps_previous_project) ... ok
+test_multiple_stories_numbering_and_previous_continuity (test_stories.StoryTests.test_multiple_stories_numbering_and_previous_continuity) ... ok
+test_real_mixed_video_export_audio_captions_and_cache (test_video_scenes.VideoSceneTests.test_real_mixed_video_export_audio_captions_and_cache) ... ok
+test_schema_roundtrip_and_video_motion_validation (test_video_scenes.VideoSceneTests.test_schema_roundtrip_and_video_motion_validation) ... ok
+test_trim_rejected_beyond_clip_and_cache_depends_on_start (test_video_scenes.VideoSceneTests.test_trim_rejected_beyond_clip_and_cache_depends_on_start) ... ok
+
+----------------------------------------------------------------------
+Ran 109 tests in 106.940s
+
+OK
