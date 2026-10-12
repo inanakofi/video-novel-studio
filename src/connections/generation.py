@@ -159,7 +159,7 @@ class GenerationService:
             raise ValueError('Job ID mismatch')
         return data
 
-    def run(self, connection_id, kind, prompt, *, cancel=None, progress=None, resume=None, target=None):
+    def run(self, connection_id, kind, prompt, *, cancel=None, progress=None, resume=None, target=None, job_id=None):
         transport = self.transport(connection_id, cancel)
         connection = transport.connection
         if kind not in PRESETS[connection.provider][2]:
@@ -169,7 +169,7 @@ class GenerationService:
         if connection.provider in ('ollama', 'openrouter', 'openai_compatible', 'runway') and not connection.model:
             raise ValueError('Choose or enter a model ID')
         job = self.load_job(resume) if resume else {
-            'id': uuid.uuid4().hex, 'created_utc': datetime.now(timezone.utc).isoformat(),
+            'id': identifier(job_id) if job_id else uuid.uuid4().hex, 'created_utc': datetime.now(timezone.utc).isoformat(),
             'connection': asdict(connection), 'kind': kind, 'prompt': prompt,
             'status': 'created', 'remote_id': None, 'artifacts': [], 'target': target or {},
         }
@@ -181,11 +181,19 @@ class GenerationService:
             raise ValueError('This job has no provider task ID. Check provider history; do not blindly resubmit.')
         directory = self.jobs / identifier(job['id'])
         directory.mkdir(parents=True, exist_ok=True)
+        if not resume and (directory / 'job.json').exists():
+            raise ValueError('This generation ID already exists. Resume the saved job instead of resubmitting.')
         lock = directory / 'running.lock'
         try:
             handle = lock.open('x')
         except FileExistsError:
             raise ValueError('This job is already being retrieved. After a process crash, remove its running.lock only when no worker remains.') from None
+        # Recheck under the lock: another worker may have finished between the
+        # first existence check and our exclusive open. Never replace its job.
+        if not resume and (directory / 'job.json').exists():
+            handle.close()
+            lock.unlink(missing_ok=True)
+            raise ValueError('This generation ID already exists. Resume the saved job instead of resubmitting.')
         def save():
             atomic_json(directory / 'job.json', job)
         def notify(message):

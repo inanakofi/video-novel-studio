@@ -1,5 +1,23 @@
 # Video Novel Studio
 
+**Complete beginner guide:** [TUTORIAL.md](TUTORIAL.md) covers fresh-PC setup,
+offline video production, AI APIs/MCP, and automatic manuscript production.
+
+## Manuscript → videos
+
+Attach a TXT, Markdown or DOCX manuscript, choose narrated visual novel,
+animated cartoon or realistic cinematic series, assign task-specific connections,
+and create an editable story with verified video exports. The workflow includes
+35 built-in prompt areas, source analysis, bibles, scripts, text review, measured
+speech, images/video, captions, saved stages and resume controls. Start with a
+single short pilot. Cartoon/cinematic output requires a video connection;
+optional lip-sync requires a compatible tool. Creative media review remains
+necessary, and music/effects can be added in the editor.
+
+See [AUTOMATION.md](AUTOMATION.md) for the conversation analysis, implemented
+workflow, provider contracts and limitations. A small original
+[practice manuscript](examples/blue_gate_manuscript.txt) is included.
+
 An offline-first desktop application that turns written episodes, still images, video clips, and
 narration recordings into vertical H.264/AAC videos. It includes a real FFmpeg
 renderer, editable scene timeline, caption editor, story documents, local audio

@@ -196,6 +196,26 @@ class ConnectionTests(unittest.TestCase):
         self.assertEqual(call[2]['X-Title'], 'Video Novel Studio')
         self.assertFalse((self.root / 'stories').exists())  # A result cannot edit a story.
 
+    def test_preassigned_id_rechecks_under_lock_and_preserves_completed_job(self):
+        conn = self.configure('openrouter')
+        completed = self.service.run(conn.id, 'story', 'Draft this', job_id='production-stage')
+        path = self.service.jobs / 'production-stage' / 'job.json'
+        before = path.read_bytes()
+        exists = Path.exists
+        checks = [0]
+        def stale_first_check(candidate):
+            if candidate == path:
+                checks[0] += 1
+                if checks[0] == 1:
+                    return False  # Simulate a submission completing just after this check.
+            return exists(candidate)
+        with patch.object(Path, 'exists', stale_first_check):
+            with self.assertRaisesRegex(ValueError, 'already exists'):
+                self.service.run(conn.id, 'story', 'Draft again', job_id='production-stage')
+        self.assertEqual(path.read_bytes(), before)
+        self.assertEqual(completed['status'], 'ready')
+        self.assertEqual(len([c for c in self.http.calls if c[1] == '/chat/completions']), 1)
+
     def test_ollama_and_compatible_dialects(self):
         for provider in ('ollama', 'openai_compatible'):
             conn = self.configure(provider)

@@ -1,5 +1,13 @@
 # Optional AI and software connections — version 1.2
 
+**Manuscript automation:** the new **Manuscript → videos** page can route analysis,
+writing, review, speech, images and video through these profiles. Starting that
+workflow applies outputs to a new story automatically; the individual Generate
+page below still saves drafts for explicit review/apply. HTTP/MCP profiles can
+advertise production capabilities through `options.production`. See the
+[complete tutorial](TUTORIAL.md#part-d--use-mcp-or-a-custom-http-service) for
+argument templates, result contracts, reference inputs and optional lip-sync.
+
 The studio still works offline. Connections start **Disabled**, each profile has
 its own enable switch, and no model discovery or network connection happens at
 startup. Normal editing, recorded narration, Windows speech, subtitles and

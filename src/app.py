@@ -32,6 +32,7 @@ from .subtitle_generator import make_cues, cues_to_srt, parse_srt, validate_cues
 from .video_renderer import render_episode, asset_errors
 from .studio_panels import ProductionPanels
 from .connection_panels import ConnectionPanels
+from .production_panels import AutomationPanels
 from .exports import export_source
 
 
@@ -128,7 +129,7 @@ def double_spin(minimum=0, maximum=3600, value=0, decimals=3):
     return widget
 
 
-class StudioWindow(ProductionPanels, ConnectionPanels, QMainWindow):
+class StudioWindow(ProductionPanels, ConnectionPanels, AutomationPanels, QMainWindow):
     def __init__(self, root: Path):
         super().__init__()
         self.library = StoryLibrary(root)
@@ -225,6 +226,7 @@ class StudioWindow(ProductionPanels, ConnectionPanels, QMainWindow):
         self.tabs.addTab(self._series_tab(), 'Series')
         self.tabs.addTab(self._publishing_tab(), 'Publishing')
         self.tabs.addTab(self._connections_tab(), 'Connections / AI')
+        self.tabs.addTab(self._automation_tab(), 'Manuscript → videos')
         main.addWidget(self.tabs, 1)
         footer = QHBoxLayout()
         self.preview_button = button('Render preview · 360p', lambda: self.start_render(preview=True))
@@ -1203,6 +1205,7 @@ class StudioWindow(ProductionPanels, ConnectionPanels, QMainWindow):
             thread.deleteLater()
         self.refresh_exports()
         self._guard(self._refresh_generation_jobs)
+        self._guard(self._refresh_production_runs)
         if self._closing:
             self.close()
 

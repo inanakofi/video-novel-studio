@@ -43,7 +43,7 @@ class ConnectionPanels:
         page = QWidget()
         layout = QVBoxLayout(page)
         layout.addWidget(note('Optional connections. Offline editing, installed speech and rendering work with these disabled. '
-                              'Only an explicit Test, Generate, Resume or Call action contacts a service.'))
+                              'Test, Generate, Resume, Call and manuscript production contact the selected services.'))
         modes = QHBoxLayout()
         self.connection_mode = QComboBox()
         for title, value in [('Disabled — offline studio', 'disabled'), ('Local services only — loopback HTTP', 'local'), ('Online and local services', 'online')]:
