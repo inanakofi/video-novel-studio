@@ -18,7 +18,9 @@ def export_source(report, workspace: Path) -> Path:
     parts = PurePosixPath(source.replace('\\', '/')).parts
     if len(parts) >= 5 and parts[-5] == 'stories' and parts[-3] == 'episodes' and parts[-1] == 'scenes.json':
         candidate = workspace.joinpath(*parts[-5:]).resolve()
-        if candidate.is_relative_to(workspace.resolve()) and candidate.is_file():
+        if candidate.is_relative_to(workspace.resolve()):
+            # A deleted source in this copy is still a local change. Falling
+            # back to a surviving original checkout would label it current.
             return candidate
     return Path(source)
 
@@ -28,13 +30,8 @@ def _cached_digest(path, size, modified_ns, changed_ns):
     return digest(Path(path))
 
 
-def source_inputs_sha256(source: Path, *, cached=False) -> str:
-    """Content signature independent of the workspace's absolute location.
-
-    UI checks reuse hashes only while the path, size and timestamps match.
-    Rendering always hashes inputs freshly, before and after producing the MP4.
-    """
-    episode = load_episode(source)
+def episode_input_paths(episode, source: Path) -> dict[str, Path]:
+    """Name every source input used by the episode, including manual captions."""
     settings = settings_for(episode)
     assets = {s.visual_asset for s in episode.scenes}
     assets.update(s.foreground_asset for s in episode.scenes if s.foreground_asset)
@@ -47,6 +44,16 @@ def source_inputs_sha256(source: Path, *, cached=False) -> str:
     paths.update({'asset:' + name: episode.resolve_asset(name) for name in assets})
     if settings['subtitle_mode'] == 'manual':
         paths['captions'] = episode.directory / 'subtitles.srt'
+    return paths
+
+
+def source_inputs_sha256(source: Path, *, cached=False) -> str:
+    """Content signature independent of the workspace's absolute location.
+
+    UI checks reuse hashes only while the path, size and timestamps match.
+    Rendering always hashes inputs freshly, before and after producing the MP4.
+    """
+    paths = episode_input_paths(load_episode(source), source)
     checksums = {}
     for name, path in paths.items():
         if cached:

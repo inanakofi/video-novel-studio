@@ -99,6 +99,8 @@ def validate_script(script, plan):
         cast = shot.get('characters')
         if not isinstance(cast, list) or any(not isinstance(c, str) or c not in characters for c in cast):
             raise ValueError('Shot characters must contain canonical character IDs.')
+        if len(set(cast)) != len(cast):
+            raise ValueError('Shot characters must not contain duplicate IDs.')
         if shot.get('location') not in locations:
             raise ValueError('Shot location must be a canonical location ID.')
         duration = shot.get('seconds')

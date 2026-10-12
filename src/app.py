@@ -1233,17 +1233,30 @@ class StudioWindow(ProductionPanels, ConnectionPanels, AutomationPanels, QMainWi
     def _save_bible(self):
         if self.story:
             atomic_text(self.story / self._document_name, self.bible_editor.toPlainText())
+        return True
 
     def save_bible(self):
-        self._guard(self._save_bible)
-        self._set_status('Story document saved.')
+        if self._guard(self._save_bible):
+            self._set_status('Story document saved.')
 
     def _bible_changed(self, name):
         if self._loading:
             return
-        self._guard(self._save_bible)
-        self._document_name = name
-        self._load_bible()
+        def switch():
+            # Read before changing selection; a failed read or save must keep
+            # the current editor contents available for correction.
+            content = ''
+            if self.story:
+                path = self.story / name
+                content = path.read_text(encoding='utf-8') if path.is_file() else f'# {name.replace("_", " ").removesuffix(".md").title()}\n\n'
+            self._save_bible()
+            self._document_name = name
+            self.bible_editor.setPlainText(content)
+            return True
+        if not self._guard(switch):
+            self.bible_combo.blockSignals(True)
+            self.bible_combo.setCurrentText(self._document_name)
+            self.bible_combo.blockSignals(False)
 
     def refresh_continuity(self):
         if self.episode and self.save_all(quiet=True):

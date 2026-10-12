@@ -115,7 +115,7 @@ def prepare_waveform(episode, *, progress=None, cancel=None):
     settings = settings_for(episode)
     spans = inspect_narration(episode)
     title, end = card_durations(settings)
-    signature = {'version': digest(Path(__file__).with_name('audio_manager.py')),
+    signature = {'version': [digest(Path(__file__)), digest(Path(__file__).with_name('audio_manager.py'))],
                  'cards': [title, end], 'volume': settings['narration_volume'],
                  'clips': [(digest(s.path) if s.path else None, s.offset, s.duration, scene.duration_seconds)
                            for s, scene in zip(spans, episode.scenes)]}
@@ -125,7 +125,14 @@ def prepare_waveform(episode, *, progress=None, cancel=None):
     target, info = root / f'{key}.wav', root / f'{key}.json'
     try:
         data = json.loads(info.read_text(encoding='utf-8'))
-        if data['sha256'] == digest(target):
+        valid = (isinstance(data, dict)
+                 and all(type(data.get(key)) in (int, float) and math.isfinite(data[key]) and data[key] > 0
+                         for key in ('bin_seconds', 'duration'))
+                 and all(isinstance(data.get(key), list) and data[key]
+                         and all(type(value) in (int, float) and math.isfinite(value) and 0 <= value <= 1
+                                 for value in data[key]) for key in ('peaks', 'rms'))
+                 and len(data['peaks']) == len(data['rms']))
+        if valid and data.get('sha256') == digest(target):
             return {**data, 'path': str(target), 'key': key}
     except (OSError, ValueError, KeyError):
         pass

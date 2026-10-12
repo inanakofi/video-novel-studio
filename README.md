@@ -1,20 +1,73 @@
 # Video Novel Studio
 
-The studio now includes coordinated light and dark appearances, media thumbnails,
-grouped scene/settings inspectors, cleaner tabs and controls, and collapsible
-render details. Choose **Appearance** at the
-bottom of the sidebar: **System**, **Light**, or **Dark**. The choice is saved
-for the workspace. See [the appearance refresh](UI_REFRESH.md) and
-[the workspace improvements and screenshots](UI_WORKSPACE.md).
+Video Novel Studio is an offline-first Python desktop application for creating
+narrated story videos and adapting manuscripts into an editable episodic series.
+Combine written scenes, illustrations or video clips, narration, captions, music
+and sound effects, then export real H.264/AAC MP4 files using FFmpeg. The default
+canvas is vertical **1080 × 1920 at 30 FPS**, with a **75-second** episode target
+and a faster **360 × 640** preview option.
 
-**Complete beginner guide:** [TUTORIAL.md](TUTORIAL.md) covers fresh-PC setup,
-offline video production, AI APIs/MCP, and automatic manuscript production.
+The studio is intended for authors, storytellers and video creators who want a
+local workspace for writing, maintaining continuity, assembling media and reviewing
+finished episodes. Its core editor and renderer work without accounts or a network.
+Optional provider connections add AI-assisted writing and media generation; models,
+provider accounts and API credits are supplied separately.
 
-The latest review, fixes, test results and outstanding draft assets are recorded
-in [REVIEW_REPORT.md](REVIEW_REPORT.md). The subsequent model-catalog and runtime
-review is in [MODEL_CATALOG_REVIEW.md](MODEL_CATALOG_REVIEW.md).
+There are two main ways to use it:
 
-## Manuscript → videos
+1. **Edit an episode yourself.** Write or import a script, build scenes, import
+   artwork/video and recordings, adjust the timeline and captions, and render.
+2. **Produce from a manuscript.** Import TXT, Markdown or DOCX, choose an adaptation
+   format, assign generation connections, review the plan, and run a saved sequence
+   of writing, speech, visual generation and verified exports. Continue editing the
+   resulting story in the same desktop workspace.
+
+## Capabilities
+
+| Area | What you can do |
+| --- | --- |
+| Story library | Create multiple series and numbered episodes; edit series, character and location bibles, hooks, cliffhangers and continuity notes. |
+| Scene editor | Add, reorder and remove scenes; select reusable assets; control duration, camera movement, transitions, captions and character/location links. |
+| Images and video | Animate stills with zooms or pans; composite layered parallax; import actual video, choose its trim start, and optionally mix its original sound. |
+| Audio | Import separate scene recordings or one episode recording; create speech with an installed Windows voice; loop music, duck it under speech and place sound effects. |
+| Timeline and captions | Decode narration waveforms, audition speech, seek and trim scene/caption boundaries; generate proportional captions or edit/import manual SRT timings. |
+| Series defaults | Reuse fonts, colours, voice choices, music, output settings and title/end-card templates across episodes. |
+| Publishing checks | Find missing assets, invalid timing, caption readability concerns, narration pauses and episodes outside your configured duration range. |
+| Rendering and playback | Render previews, final MP4s or a whole story batch; cancel jobs; reuse cached shots; play the actual export in the embedded player. |
+| AI connections | Draft text and generate images, speech or video through configured HTTP providers, local services or explicit MCP tools. Review saved results before applying them. |
+| Manuscript production | Analyse source sections, create bibles and a season plan, write/review scripts, generate media, save stage history and resume interrupted production. |
+
+Choose **System**, **Light** or **Dark** under **Appearance** in the sidebar.
+The choice is saved for the workspace. Media thumbnails, collapsible inspectors
+and render logs support editing and troubleshooting.
+
+Successful exports include an MP4, SRT sidecar and verification report. Verification
+checks stream properties, duration and caption bounds, then fully decodes the file.
+This establishes technical integrity; watch and listen to each video to assess its
+creative quality before publishing.
+
+## Quick start
+
+On Windows, install Python 3.10+ and a full FFmpeg build with FFprobe, then run
+these commands from the checkout:
+
+```powershell
+.\Setup.ps1
+.\Start-Studio.ps1
+```
+
+`Setup.ps1` creates `.venv`, updates pip, installs the core dependencies and checks the runtime.
+It does not install Python or FFmpeg. See [Installation](#installation) for manual
+setup, executable overrides and preparing an offline installation.
+
+Open **The Letter at the Gate** to explore the supplied three-scene sample.
+Use **Render preview** to produce and play a draft, then try a new story with your
+own text and media. Sample projects are examples, not requirements for a new story.
+
+**Beginner guide:** [TUTORIAL.md](TUTORIAL.md) explains fresh-PC setup, offline
+production, optional APIs/MCP and manuscript production step by step.
+
+## Manuscript production
 
 Attach a TXT, Markdown or DOCX manuscript, choose narrated visual novel,
 animated cartoon or realistic cinematic series, assign task-specific connections,
@@ -29,17 +82,19 @@ See [AUTOMATION.md](AUTOMATION.md) for the conversation analysis, implemented
 workflow, provider contracts and limitations. A small original
 [practice manuscript](examples/blue_gate_manuscript.txt) is included.
 
-An offline-first desktop application that turns written episodes, still images, video clips, and
-narration recordings into vertical H.264/AAC videos. It includes a real FFmpeg
-renderer, editable scene timeline, caption editor, story documents, local audio
-mixing, an export verifier, and an embedded player for the finished MP4.
+Production runs support narrated illustrations, animated cartoons and realistic
+cinematic footage. Cartoon/cinematic formats assemble generated video clips;
+they require a video-capable connection. Each run creates a new story in one
+format. Resume reuses completed stages and saved provider task IDs; unknown
+submission outcomes need inspection and an explicit retry. Optional plan review
+pauses before media generation.
 
-**Start here:** run `Start-Studio.ps1` (uses the project's virtual environment),
-or run `.\.venv\Scripts\python.exe -m src.app` after setup. Open **The Letter at
-the Gate** to explore the supplied three-scene sample. Its finished 75-second
-video is in `exports/`.
+The source importer accepts files up to 20 MiB and 2 million extracted characters.
+The guided workflow supports 1–24 episodes and up to 100 shots per episode. Its
+generation-stage limit controls new stages, not provider charges. It does not
+automatically upload or publish videos.
 
-## Optional connections and video scenes (1.2)
+## Optional connections and models
 
 **Connections / AI** adds OpenRouter, Ollama and OpenAI-compatible text drafting,
 ElevenLabs narration, ComfyUI image/video workflows, Runway text-to-video, generic
@@ -69,7 +124,7 @@ untested capabilities. [Live OpenRouter checks](exports/verification/openrouter-
 produced a script and narration; the test account blocked images with HTTP 402.
 Other adapters use protocol fixtures, which are not AI models.
 
-## New editing and production controls
+## Editing and production controls
 
 - **Timeline / captions:** click **Load waveform** to decode the current local
   narration, then **Listen / pause narration** to audition it. The waveform,
@@ -139,8 +194,8 @@ For a new computer, clone or copy the whole repository into any folder. Run
 setup scripts, templates, documentation and sample images/audio/videos are all
 included in Git. Replace example paths below with your checkout location.
 
-Git excludes only local session/connection settings, generated job history,
-Python environments/bytecode and rebuildable render caches/locks. The application
+Git excludes local session/connection settings, generated job history,
+Python environments/bytecode, build output and rebuildable render caches/locks. The application
 recreates its settings and caches. Optional provider keys must be entered again
 on a new computer; recorded assets already applied to episodes are included in
 the project's assets folders. Install Python and FFmpeg/FFprobe as described below.
@@ -164,6 +219,7 @@ cd J:\storyline\video-novel-studio
 winget install --id Gyan.FFmpeg --exact
 # Open a new terminal after changing PATH.
 python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install --upgrade "pip>=26.2,<27"
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
 .\.venv\Scripts\python.exe -m src.doctor
 .\.venv\Scripts\python.exe -m src.app
@@ -174,9 +230,34 @@ python -m venv .venv
 also be installed manually. Set `VNS_FFMPEG` and `VNS_FFPROBE` to full executable
 paths when PATH cannot be changed.
 
-For an existing installation, update the project environment with
-`.\.venv\Scripts\python.exe -m pip install -r requirements.txt`. Activate it with
+For an existing installation, rerun `Setup.ps1`, or update pip and install
+`requirements.txt` using the commands above. Activate the environment with
 `.\.venv\Scripts\Activate.ps1` before using the `python` commands below.
+
+The core project can also be installed with `python -m pip install .`, which
+provides the `video-novel-studio` command. For an installed package, select a
+writable workspace explicitly, for example
+`video-novel-studio --workspace D:\MyStories`. Sample projects and documentation
+belong to the checkout and are not included in the Python wheel.
+
+### Configuration
+
+No environment variables are required when FFmpeg and FFprobe are on PATH.
+
+| Setting | Purpose |
+| --- | --- |
+| `VNS_FFMPEG` | Optional full path to the FFmpeg executable. |
+| `VNS_FFPROBE` | Optional full path to the FFprobe executable. |
+| `--workspace PATH` / `Start-Studio.ps1 -Workspace PATH` | Select the directory containing your stories, assets, settings and exports. |
+| Connection `key_env` | Name of an environment variable holding that connection's credential, as an alternative to the Windows encrypted credential store. |
+| `VNS_GUI_TESTS=1` | Enable desktop interaction and playback tests; not needed for normal use. |
+
+Connection modes are **disabled** (default), **local-only** (loopback HTTP
+services) and **online** (configured remote HTTPS services). Set these in
+**Connections / AI**. The core editor and renderer are available in every mode.
+An MCP stdio connection launches the configured program; connection mode does
+not sandbox that program. See [CONNECTIONS.md](CONNECTIONS.md) for setup and
+credential handling.
 
 After installation, application use, local speech, media importing, previewing,
 and rendering require **no network connection, accounts, cloud AI, paid API,
@@ -184,7 +265,8 @@ or online inference**. To prepare dependencies for another offline machine,
 download compatible wheels on a machine with the same Python/OS first:
 
 ```powershell
-python -m pip download -r requirements.txt -d wheels
+python -m pip download "pip>=26.2,<27" -r requirements.txt -d wheels
+python -m pip install --no-index --find-links wheels --upgrade "pip>=26.2,<27"
 python -m pip install --no-index --find-links wheels -r requirements.txt
 ```
 
@@ -202,7 +284,7 @@ belong to the operating system; they are not bundled voice models.
    Rebuilding detaches previous recordings and returns captions to automatic
    mode; import or create narration for the revised text. Original recordings
    remain on disk.
-3. In **Scenes / preview**, add at least three scenes. Browse to your images,
+3. In **Scenes / preview**, add one or more scenes. Browse to your images,
    or use shared character/background assets. The still preview preserves aspect
    ratio. The renderer fills the vertical frame by cropping, without stretching.
 4. Import a voice recording for each scene. WAV, MP3, FLAC, AAC and other
@@ -329,6 +411,30 @@ ordinary JSON/Markdown/media files and can be moved together as a directory.
 Absolute paths appear only in generated local render plans and verification
 reports; rerender after moving a workspace to refresh those reports.
 
+Keep the complete workspace when moving or backing up a project: episodes can
+reference shared media in `assets/` or reusable series music. Local connection
+profiles, model choices and generation/production history are excluded from Git;
+include them in your own backup if you need to resume that work. Windows encrypted
+credentials are stored outside the workspace and are specific to the current user.
+
+## Code organization
+
+The application uses **PySide6** for the desktop interface, **Pillow** for image
+preparation and title cards, and external **FFmpeg/FFprobe** processes for media
+decoding, mixing, encoding and verification. HTTP integrations use the Python
+standard library; MCP is an optional dependency.
+
+| Module area | Responsibility |
+| --- | --- |
+| `src/app.py`, `*_panels.py`, `theme.py`, `ui_widgets.py` | Desktop controls, workspace state, appearance and background jobs. |
+| `scene_builder.py`, `settings.py`, `story_manager.py`, `series_tools.py` | Validated project format, file persistence, asset imports and series continuity/defaults. |
+| `timeline.py`, `timeline_widget.py`, `subtitle_generator.py` | Waveforms, timeline edits and SRT/ASS captions. |
+| `video_renderer.py`, `audio_manager.py`, `media.py`, `render_cache.py` | Media assembly, shot reuse, cancellation and verified export publication. |
+| `publishing.py`, `exports.py`, `batch.py`, `doctor.py` | Editorial checks, export freshness, batch rendering and runtime diagnostics. |
+| `src/connections/` | Provider profiles, credentials, transport, model catalogs and saved generation jobs. |
+| `src/production/` | Manuscript extraction, prompt contracts, task routing and resumable stage execution. |
+| `studio_mcp.py` | Optional workspace-scoped MCP server, read-only by default. |
+
 ## Command-line tools
 
 Run from the project directory:
@@ -344,12 +450,18 @@ python -m src.video_renderer stories/the_letter_at_the_gate/episodes/episode_001
 python -m src.video_renderer stories/the_letter_at_the_gate/episodes/episode_001/scenes.json --render --preview --output exports/preview.mp4
 python -m src.batch stories/the_letter_at_the_gate --output exports
 python -m src.publishing stories/the_letter_at_the_gate/episodes/episode_001/scenes.json
+python -m src.studio_mcp --workspace D:\MyStories
 ```
 
 Omit `--render` to print a JSON planning summary. Batch rendering saves a
 per-episode success/failure report and returns a failing exit code if any episode
 fails. The pre-existing `ama_and_the_secret_heir` writing scaffold is preserved;
 its example asset references need to be replaced before it can render.
+
+The MCP command requires `python -m pip install -r requirements-integrations.txt`.
+Use `--allow-drafts` to expose saving new review drafts and `--allow-render` to
+expose rendering to new export files. It communicates over stdio and starts only
+when explicitly launched.
 
 ## Tests and verification
 
@@ -410,3 +522,12 @@ verification evidence is under `verification/`.
   bottom log; failures never receive a successful verification report.
 
 Sample artwork, text, music and sound-effect provenance is in `SAMPLE_ASSETS.md`.
+
+## Further documentation
+
+- [TUTORIAL.md](TUTORIAL.md): complete beginner walkthrough.
+- [AUTOMATION.md](AUTOMATION.md): manuscript stages, prompt coverage, recovery and format limitations.
+- [CONNECTIONS.md](CONNECTIONS.md): provider setup, custom HTTP/MCP tools and model routing.
+- [UI_WORKSPACE.md](UI_WORKSPACE.md) and [UI_REFRESH.md](UI_REFRESH.md): desktop layout and appearance examples.
+- [PROJECT_REVIEW.md](PROJECT_REVIEW.md): current bug fixes, regression checks and remaining gaps.
+- [REVIEW_REPORT.md](REVIEW_REPORT.md), [MODEL_CATALOG_REVIEW.md](MODEL_CATALOG_REVIEW.md) and [VERIFICATION_REPORT.md](VERIFICATION_REPORT.md): earlier reviews and recorded verification scope.

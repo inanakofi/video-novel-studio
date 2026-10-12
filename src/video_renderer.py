@@ -16,7 +16,7 @@ from .audio_manager import inspect_narration, prepare_voice, mix_audio
 from .subtitle_generator import make_cues, parse_srt, validate_cues, cues_to_srt, write_ass
 from .visuals import prepare_image, card
 from .render_cache import ShotCache, shot_key, digest
-from .exports import source_inputs_sha256
+from .exports import episode_input_paths, source_inputs_sha256
 
 
 def asset_errors(episode: Episode) -> list[str]:
@@ -180,6 +180,10 @@ def render_episode(scenes_path: str | Path, output: str | Path, *, cancel: threa
     output = Path(output).resolve()
     if output.suffix.lower() != '.mp4':
         raise MediaError('Output filename must end with .mp4')
+    inputs = {path.resolve() for path in episode_input_paths(episode, Path(scenes_path)).values()}
+    for destination in (output, output.with_suffix('.srt'), output.with_suffix('.verification.json')):
+        if destination.resolve() in inputs:
+            raise MediaError(f'Export would replace a source input: {destination}. Choose a different output filename or directory.')
     output.parent.mkdir(parents=True, exist_ok=True)
     lock = output.with_suffix('.mp4.lock')
     try:
@@ -233,7 +237,12 @@ def render_episode(scenes_path: str | Path, output: str | Path, *, cancel: threa
                 jobs.append((end, end_duration, 'static', 'crossfade', .5, None, 'image', 0))
             segments = []
             previous = None
-            cache = ShotCache(episode.directory / '.vns-cache' / 'shots') if use_cache else None
+            cache = None
+            if use_cache:
+                try:
+                    cache = ShotCache(episode.directory / '.vns-cache' / 'shots')
+                except OSError:
+                    notify(.15, 'Shot cache unavailable; rendering without cached shots')
             cache_hits = 0
             for index, (source, length, motion, transition, fade, foreground, media_type, video_start) in enumerate(jobs):
                 segment = work / f'segment_{index:04}.mp4'
@@ -280,7 +289,7 @@ def render_episode(scenes_path: str | Path, output: str | Path, *, cancel: threa
                            'target_duration_seconds': settings['target_duration'],
                            'within_default_60_90_seconds': 60 <= duration <= 90,
                            'caption_count': len(cues),
-                           'scene_cache': {'enabled': use_cache, 'hits': cache_hits, 'misses': len(jobs) - cache_hits}})
+                           'scene_cache': {'enabled': cache is not None, 'hits': cache_hits, 'misses': len(jobs) - cache_hits}})
             report['ffprobe']['format']['filename'] = str(output)
             report['output_sha256'] = digest(staged)
             staged_report = work / 'verification.json'

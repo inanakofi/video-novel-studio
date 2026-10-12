@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 from dataclasses import replace
-import hashlib
 import json
 import math
 import os
@@ -14,6 +13,7 @@ import unicodedata
 
 from .media import atomic_json, audio_duration
 from .scene_builder import Episode, Scene, load_episode, save_episode
+from .render_cache import digest
 
 
 BIBLES = ('series_bible.md', 'character_bible.md', 'location_bible.md', 'continuity_log.md')
@@ -151,8 +151,8 @@ class StoryLibrary:
         if target.resolve() == source:
             return Path(os.path.relpath(source, episode.directory)).as_posix()
         if target.exists():
-            digest = hashlib.sha256(source.read_bytes()).hexdigest()[:10]
-            target = destination / f'{source.stem}-{digest}{source.suffix}'
+            checksum = digest(source)[:10]
+            target = destination / f'{source.stem}-{checksum}{source.suffix}'
         if not target.exists():
             fd, temporary = tempfile.mkstemp(prefix='.import-', dir=destination)
             os.close(fd)

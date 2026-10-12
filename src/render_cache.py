@@ -48,6 +48,8 @@ class ShotCache:
         frame = self.root / f'{key}.png'
         try:
             record = json.loads(manifest.read_text(encoding='utf-8'))
+            if not isinstance(record, dict):
+                return False
             if record['sha256'] != digest(video) or record['frame_sha256'] != digest(frame):
                 return False
             shutil.copyfile(video, output)
