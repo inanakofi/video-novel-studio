@@ -5,6 +5,3 @@
 Visual: assets/scene_001.png
 
 Motion: slow_zoom_in; transition: cut
-
-
-

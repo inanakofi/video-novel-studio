@@ -12,7 +12,10 @@
       "narration_audio": "assets/Ama scène 01.wav",
       "transition": "crossfade",
       "transition_seconds": 0.5,
-      "characters": []
+      "characters": [],
+      "media_type": "image",
+      "video_start_seconds": 0.0,
+      "video_audio_volume": 0.0
     },
     {
       "scene_id": 2,
@@ -24,7 +27,10 @@
       "narration_audio": "assets/Ama scène 02.wav",
       "transition": "crossfade",
       "transition_seconds": 0.5,
-      "characters": []
+      "characters": [],
+      "media_type": "image",
+      "video_start_seconds": 0.0,
+      "video_audio_volume": 0.0
     },
     {
       "scene_id": 3,
@@ -37,7 +43,10 @@
       "transition": "crossfade",
       "transition_seconds": 0.5,
       "foreground_asset": "assets/Gate foreground.png",
-      "characters": []
+      "characters": [],
+      "media_type": "image",
+      "video_start_seconds": 0.0,
+      "video_audio_volume": 0.0
     }
   ],
   "settings": {
